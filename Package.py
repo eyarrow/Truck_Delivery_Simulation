@@ -62,10 +62,10 @@ class PackagesToBeDelivered:
             if self.packageHash.array[i].returnLinkedListData() is None:
                 i = i + 1
             else:
-                temp = self.packageHash.array[i].head
-                temp.data.printPackageInfo()
+                temp = self.packageHash.array[i]
+                temp.returnLinkedListData().printPackageInfo()
                 # iterate through the list if there are other values
-                while temp.next is not None:
+                while temp.returnLinkedListNext() is not None:
                     temp = temp.next
                     temp.data.printPackageInfo()
 

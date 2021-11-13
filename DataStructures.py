@@ -47,9 +47,18 @@ class LinkedList:
     def returnLinkedListData(self):
         return self.head.returnData()
 
+    def returnHead(self):
+        return self.head
+
     # Helper function that returns the next object in the LL
     def returnLinkedListNext(self):
         return self.head.returnNext()
+
+    def setLinkedListData(self, data_to_set):
+        self.head = data_to_set
+
+    def setLinkedListNext(self, data_to_set_as_next):
+        self.head.next = data_to_set_as_next
 
 
 # Managing the Hash Table object. Initialization creates an emtpy hash table of 100 elements with index 0-99, if another
