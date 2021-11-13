@@ -11,7 +11,6 @@ class TimedDelivery:
     def __init__(self, time, before_after, package_number):
         self.TimedDelivery = (time, before_after, package_number)
 
-
     # check to see whether or not package is eligible for delivery at a given point in time. Returns true if
     # the package is deliverable, false if it is too early for delivery
     def checkDeliveryElligibility(self, current_time):
@@ -27,9 +26,7 @@ class TimedDelivery:
     # if so returns true, else returns false. Assumes time given is military time, with leading zeroes included
     def determineIfTimeIsAfter(self, time):
         parse_hour = self.TimedDelivery[0][:2]
-        print(parse_hour)
         parse_minute = self.TimedDelivery[0][3:5]
-        print(parse_minute)
         parse_given_hour = time.TimedDelivery[0][:2]
         parse_given_minute = time.TimedDelivery[0][3:5]
 
@@ -45,7 +42,6 @@ class TimedDelivery:
                     return True
 
 
-
 # Class to manage each individual truck throughout the delivery process. "packages" represent all packages that are
 # loaded on the truck that DO NOT have time constraints. "packages_timed_delivery" is a linked list of packages that
 # do have time constraints. These are added as "TimedDelivery" objects which help determine delivery logic. The list
@@ -58,21 +54,28 @@ class Truck:
         self.packages = []  # List of packages with no special instructions
         self.packages_timed_delivery = DataStructures.LinkedList()  # Packages with instructions around delivery times
 
+    # Returns the list of packages to be delivered
     def returnPackages(self):
         return self.packages
 
+    # Returns the list of packages that have timed delivery requirements
     def returnPackagesTimedDeivery(self):
         return self.packages_timed_delivery
 
+    # Returns the number of miles driven by the truck in a given work day
     def returnMiles(self):
         return self.miles
 
+    # Returns the truck's current location
     def returnLocation(self):
         return self.location
 
+    # Add a package to the package list
     def addToPackageList(self, package_number):
         self.packages.append(package_number)
 
+    # Add a package to the time delivery list. These are packages that need to be delivered before or after a given
+    # time
     def addToTimedDeliveryList(self, time, before_after, package_number):
         new_timed_delivery = TimedDelivery(time, before_after, package_number)
         # check to see if Linked list has data
@@ -105,6 +108,8 @@ class Truck:
                 # add at the end
                 self.packages_timed_delivery.addToLinkedList(new_timed_delivery)
 
-
-
-
+    # Move a package for the normal delivery schedule to a requested time delivery. The timed delivery information
+    # must be included in parameters, and items will be removed from the regular list once prioritized.
+    def moveFromNormalDeliveryToTimedDelivery(self, time, before_after, package_number):
+        self.packages.remove(package_number)
+        self.addToTimedDeliveryList(time, before_after, package_number)

@@ -5,21 +5,14 @@
 
 import Package
 import Truck
+import Simulation
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     # Load the package data for the simulation, including packages to be delivered, addresses, and their distance
     # information
-    new_packages = Package.PackagesToBeDelivered('packages.csv', 'distances.csv', 'addresslist.csv', 27)
-    new_packages.printAllPackages()
-
-    truck1 = Truck.Truck(1)
-    truck1.addToTimedDeliveryList('09:00', 0, 15)
-    truck1.addToTimedDeliveryList('08:00', 0, 21)
-    truck1.addToTimedDeliveryList('10:00', 0, 5)
-    truck1.addToTimedDeliveryList('10:30', 1, 7)
-    truck1.addToTimedDeliveryList('10:00', 0, 8)
-    truck1.addToTimedDeliveryList('08:00', 0, 2)
-    truck1.addToTimedDeliveryList('12:00', 0, 9)
+    simulation = Simulation.Simulation([1, 2], 'packages.csv', 'distances.csv', 'addresslist.csv', 27)
+    simulation.truckSpecificDelivery(2, [3, 18, 36, 38])  # requirement: loaded on truck 2
+    simulation.truckSpecificDelivery(1, [13, 14, 15, 16, 19, 20])  # req: must be delivered together
 
     print("There is something about Mary")
