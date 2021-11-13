@@ -53,6 +53,8 @@ class Truck:
         self.location = location
         self.packages = []  # List of packages with no special instructions
         self.packages_timed_delivery = DataStructures.LinkedList()  # Packages with instructions around delivery times
+        self.num_of_timed_packages = 0
+        self.num_of_packages = 0
 
     # Returns the list of packages to be delivered
     def returnPackages(self):
@@ -73,11 +75,21 @@ class Truck:
     # Add a package to the package list
     def addToPackageList(self, package_number):
         self.packages.append(package_number)
+        self.num_of_packages = self.num_of_packages+1
+
+    # Checks to see if package number provided already exists on list. If it does returns true
+    def checkIfPackageOnPackageList(self, package_number):
+        flag = False
+        for package in self.packages:
+            if package == package_number:
+                flag = True
+        return flag
 
     # Add a package to the time delivery list. These are packages that need to be delivered before or after a given
     # time
     def addToTimedDeliveryList(self, time, before_after, package_number):
         new_timed_delivery = TimedDelivery(time, before_after, package_number)
+        self.num_of_timed_packages = self.num_of_timed_packages + 1
         # check to see if Linked list has data
         iterate = self.packages_timed_delivery  # linked list object
         trail = None
@@ -113,3 +125,5 @@ class Truck:
     def moveFromNormalDeliveryToTimedDelivery(self, time, before_after, package_number):
         self.packages.remove(package_number)
         self.addToTimedDeliveryList(time, before_after, package_number)
+        self.num_of_packages = self.num_of_packages-1
+
