@@ -11,12 +11,13 @@ import Simulation
 if __name__ == '__main__':
     # Load the package data for the simulation, including packages to be delivered, addresses, and their distance
     # information
-    simulation = Simulation.Simulation([1, 2], 'packages.csv', 'distances.csv', 'addresslist.csv', 27)
+    simulation = Simulation.Simulation([1, 2], 'packages.csv', 'distances.csv', 'addresslist.csv', 27, 16)
 
     # Load packages that need to be on specific trucks
     simulation.truckSpecificDelivery(2, [3, 18, 36, 38])  # requirement: loaded on truck 2
     simulation.truckSpecificDelivery(1, [13, 14, 15, 16, 19, 20])  # req: must be delivered together
 
+    # Load time sensitive deliveries
     simulation.setTimeSensitiveDeliveryTimes('10:30', 0, [13, 14, 16, 20, 25, 29, 30, 31, 34, 37, 40])
     simulation.setTimeSensitiveDeliveryTimes('09:00', 0, [15])
     simulation.setTimeSensitiveDeliveryTimes('09:05', 1, [6, 25, 28, 32])

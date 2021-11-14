@@ -11,7 +11,7 @@ import Truck
 # num_of_addresses - Number of addresses included in days delivery
 class Simulation:
     def __init__(self, list_of_trucks, filename_of_packages, filename_of_distances, filename_address_index,
-                 num_of_addresses):
+                 num_of_addresses, max_num_package_per_truck=16):
         self.new_packages = Package.PackagesToBeDelivered(filename_of_packages, filename_of_distances,
                                                           filename_address_index, num_of_addresses)
         self.truck_list = self.initializeTrucks(list_of_trucks)
@@ -19,6 +19,8 @@ class Simulation:
         self.clock = '08:00'
         self.specific_truck_requests = []  # Packages that must be delivered on a specific truck
         self.timed_requests = []  # Packages that must be delivered before or after a given time.
+        self.max_num_package_per_truck = max_num_package_per_truck
+        self.packages_to_be_delivered = self.new_packages.returnPackageIndices()
 
     # initializes a set of trucks to be used for the day. Uses the truck numbers as assigned by the calling application
     def initializeTrucks(self, list_of_trucks):
@@ -42,6 +44,7 @@ class Simulation:
             for i in range(len(self.truck_list)):
                 if self.truck_list[i].truck_number == truck:
                     self.truck_list[i].addToPackageList(package)
+                    self.packages_to_be_delivered.remove(package)
         self.specific_truck_requests = []
 
     # Checks to see if a priority (timed) package is already loaded on a particular truck. If it is, it's moved
@@ -73,6 +76,7 @@ class Simulation:
         least_loaded_truck = 0
         max = 0
         index = 0
+        loaded_deliveries = []
         while self.timed_requests:
             for trucks in self.truck_list:
                 num = trucks.num_of_timed_packages
@@ -82,7 +86,7 @@ class Simulation:
                 else:
                     if num < max:
                         least_loaded_truck = trucks.truck_number
-                    else:  # num is greater than max
+                    else:  # num is greater than max, num is the new max
                         max = num
         # Add the package to the least loaded truck
             time = self.timed_requests[index][0]
@@ -91,9 +95,10 @@ class Simulation:
             self.loadTimedPackagedByTruckNumber(least_loaded_truck, time, before_after, package_number)
             package_tuple = (time, before_after, package_number)
             self.timed_requests.remove(package_tuple)
-
-
-
+            loaded_deliveries.append(package_number)
+            for item in self.packages_to_be_delivered:
+                if item == package_number:
+                    self.packages_to_be_delivered.remove(package_number)
 
 
     # Load specific package to specific truck
@@ -101,11 +106,14 @@ class Simulation:
         for truck in self.truck_list:
             if truck.truck_number == truck_number:
                 truck.addToPackageList(package_number)
+                self.packages_to_be_delivered.remove(package_number)
+
 
     def loadTimedPackagedByTruckNumber(self, truck_number, time, before_after, package_number):
         for truck in self.truck_list:
             if truck.truck_number == truck_number:
                 truck.addToTimedDeliveryList(time, before_after, package_number)
+                # self.packages_to_be_delivered.remove(package_number)
 
 
 
