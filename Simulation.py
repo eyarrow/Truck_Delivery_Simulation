@@ -45,6 +45,8 @@ class Simulation:
                 if self.truck_list[i].truck_number == truck:
                     self.truck_list[i].addToPackageList(package)
                     self.packages_to_be_delivered.remove(package)
+                    status_string = f"Loaded on Truck {self.truck_list[i].truck_number} - out for delivery"
+                    self.new_packages.updateStatusByPackageID(package, status_string)
         self.specific_truck_requests = []
 
     # Checks to see if a priority (timed) package is already loaded on a particular truck. If it is, it's moved
@@ -107,14 +109,31 @@ class Simulation:
             if truck.truck_number == truck_number:
                 truck.addToPackageList(package_number)
                 self.packages_to_be_delivered.remove(package_number)
+                status_string = f"Loaded on Truck {truck.truck_number} - out for delivery"
+                self.new_packages.updateStatusByPackageID(package_number, status_string)
 
-
+    # load a package with time constraints to a given truck
     def loadTimedPackagedByTruckNumber(self, truck_number, time, before_after, package_number):
         for truck in self.truck_list:
             if truck.truck_number == truck_number:
                 truck.addToTimedDeliveryList(time, before_after, package_number)
-                # self.packages_to_be_delivered.remove(package_number)
+                status_string = f"Loaded on Truck {truck.truck_number} - out for delivery"
+                self.new_packages.updateStatusByPackageID(package_number, status_string)
 
+    # print the package list with current status
+    def printPackagesCurrentStatus(self):
+        self.new_packages.printAllPackages()
+
+    # Loads trucks with packages up to their capacity
+    def loadTrucksToMaxCapacity(self):
+        for truck in self.truck_list:
+            current_load = truck.num_of_timed_packages + truck.num_of_packages
+            while current_load < self.max_num_package_per_truck:
+                self.loadPackageByTruckNumber(truck.truck_number, self.packages_to_be_delivered[0])
+                current_load = current_load + 1
+
+    # Run a singular truck simulation **test**
+    def runTruckSimulation(self):
 
 
 

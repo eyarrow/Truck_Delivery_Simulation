@@ -128,3 +128,8 @@ class PackagesToBeDelivered:
             for row in location_file:
                 self.location_index[row[0]] = index
                 index = index + 1
+
+    # Update the status string for a given package id
+    def updateStatusByPackageID(self, package_id, status_string):
+        key = self.packageHash.calculateIndex(package_id)
+        self.packageHash.array[key].head.data.updateDeliveryStatus(status_string)
