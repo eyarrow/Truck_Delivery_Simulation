@@ -177,11 +177,32 @@ class Simulation:
             for item in list_to_deliver:
                 print(item)
 
+    # testing 123
 
 
 
+    # test
+    def experimentingWithLists(self):
+        def sortOrder(myList):
+            time = myList[0]
+            hour, minute = map(int, time.split(':'))
+            return (hour * 60) + minute
 
-            # step two - determination location index for each package number
+
+        myList = []
+        tuple1 = ('8:15', 0, 21)
+        tuple2 = ('9:00', 1, 22)
+        tuple3 = ('8:00', 0, 30)
+        tuple4 = ('9:30', 1, 20)
+        myList.append(tuple1)
+        myList.append(tuple2)
+        myList.append(tuple3)
+        myList.append(tuple4)
+        print(myList)
+        myList.sort(key=sortOrder)
+        return myList
+
+
 
 
 

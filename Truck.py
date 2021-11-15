@@ -141,27 +141,20 @@ class Truck:
         undeliverable = []
         temp = self.packages_timed_delivery.head
         trail = temp
-        delivered_check = False
         while temp.next is not None:
             time = TimedDelivery(clock, 0, 0)
             is_deliverable = temp.data.checkDeliveryElligibility(time)
             if is_deliverable:
                 number_of_deliverable_packages = number_of_deliverable_packages+1
-                package_id = temp.data.returnPackageID()
-                deliverable_package_list.append(package_id)
                 self.num_of_timed_packages = self.num_of_timed_packages - 1
-                trail.next = temp.next
-                temp = None
-                temp = trail.next
+                package_id = temp.data.returnPackageID()
+                print(f"package id returned is: {package_id}")
+                deliverable_package_list.append(package_id)
+                temp = temp.next
             else:
                 undeliverable.append(temp.data)
                 temp = temp.next
-                trail = trail.next
-        print(f"List to be delivered after run: ")
-        temp = self.packages_timed_delivery.head
-        while temp.next is not None:
-            print(temp.data.returnPackageID())
-            temp = temp.next
+        print(f"These are undeliverable: {undeliverable}")
         return deliverable_package_list
 
     def addTimeToClock(self, minutes):
@@ -226,6 +219,8 @@ class Truck:
             for package in list_of_delivered_packages:
                 if item == package:
                     self.packages.remove(package)
+
+
 
 
 

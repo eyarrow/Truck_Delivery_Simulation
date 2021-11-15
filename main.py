@@ -18,9 +18,10 @@ if __name__ == '__main__':
     simulation.truckSpecificDelivery(1, [13, 14, 15, 16, 19, 20])  # req: must be delivered together
 
     # Load parameters for time sensitive deliveries
-    simulation.setTimeSensitiveDeliveryTimes('10:30', 0, [13, 14, 16, 20, 25, 29, 30, 31, 34, 37, 40])
+    simulation.setTimeSensitiveDeliveryTimes('10:30', 0, [13, 14, 16, 20, 29, 30, 31, 34, 37, 40])
     simulation.setTimeSensitiveDeliveryTimes('09:00', 0, [15])
-    # simulation.setTimeSensitiveDeliveryTimes('09:05', 1, [6, 25, 28, 32])  # Not at depo until 9:05
+    # simulation.setTimeSensitiveDeliveryTimes('09:05', 1, [6, 25, 28, 32])  # Not at depo until 9:05, 25
+        # will need to be loaded first has a deadline of 10:30
     simulation.setTimeSensitiveDeliveryTimes('10:20', 1, [9])  # needs delivery address updated
 
     # Load any time sensitive packages onto trucks that have not been loaded already
@@ -33,6 +34,12 @@ if __name__ == '__main__':
 
     simulation.printPackagesCurrentStatus()
     print(f"Total Miles Traveled: {simulation.total_distance_traveled}")
+    myList = simulation.experimentingWithLists()
+    print(myList)
+
+
+
+
 
 
 
