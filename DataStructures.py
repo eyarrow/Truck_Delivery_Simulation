@@ -61,6 +61,9 @@ class LinkedList:
         self.head.next = data_to_set_as_next
 
 
+
+
+
 # Managing the Hash Table object. Initialization creates an emtpy hash table of 100 elements with index 0-99, if another
 # number of hash table elements are not provided.
 class HashTable:

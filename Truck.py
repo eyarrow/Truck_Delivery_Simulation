@@ -139,22 +139,19 @@ class Truck:
         number_of_deliverable_packages = 0
         deliverable_package_list = []
         temp = self.packages_timed_delivery.head
+        trail = temp
         delivered_check = False
         while temp.next is not None:
-            # check if the package is already delivered
-            for item in self.delivered_packages:
-                if item == temp.data.returnPackageID():
-                    delivered_check = True
-            if delivered_check is False:
-                time = TimedDelivery(clock, 0, 0)
-                is_deliverable = temp.data.checkDeliveryElligibility(time)
-                if is_deliverable:
-                    number_of_deliverable_packages = number_of_deliverable_packages+1
-                    package_id = temp.data.returnPackageID()
-                    deliverable_package_list.append(package_id)
-                    temp = temp.next
-                else:
-                    temp = temp.next
+            time = TimedDelivery(clock, 0, 0)
+            is_deliverable = temp.data.checkDeliveryElligibility(time)
+            if is_deliverable:
+                number_of_deliverable_packages = number_of_deliverable_packages+1
+                package_id = temp.data.returnPackageID()
+                deliverable_package_list.append(package_id)
+                temp = temp.next
+            else:
+                temp = temp.next
+        # remove the "delivered packages from the early list
         return deliverable_package_list
 
     def addTimeToClock(self, minutes):
