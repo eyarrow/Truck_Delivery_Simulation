@@ -16,6 +16,7 @@ class Simulation:
                                                           filename_address_index, num_of_addresses)
         self.truck_list = self.initializeTrucks(list_of_trucks)
         self.num_of_trucks = len(self.truck_list)
+        self.total_distance_traveled = 0
         self.clock = '08:00'
         self.specific_truck_requests = []  # Packages that must be delivered on a specific truck
         self.timed_requests = []  # Packages that must be delivered before or after a given time.
@@ -134,6 +135,61 @@ class Simulation:
 
     # Run a singular truck simulation **test**
     def runTruckSimulation(self):
+        # start with timed packages
+        list_to_deliver = []
+        num_of_packages_delivered = 0
+        for truck in self.truck_list:
+            list_to_deliver = truck.getTimeSensitivePackagesList(self.new_packages)
+            # Manually deliver the first package from the depo
+            location_code1 = 0;
+            location_code2 = self.new_packages.returnLocationCode(list_to_deliver[0])
+            # determine distance
+            distance = self.new_packages.address_matrix.lookupDistance(location_code1, location_code2)
+            # deliver package
+            time = truck.deliverPackage(list_to_deliver[0], distance)
+            self.new_packages.updateStatusByPackageID(list_to_deliver[0], f"Delivered at {time}")
+            item = list_to_deliver[0]
+            list_to_deliver.remove(item)
+            for i in range(len(list_to_deliver)-1):
+                location_code1 = self.new_packages.returnLocationCode(list_to_deliver[i])
+                location_code2 = self.new_packages.returnLocationCode(list_to_deliver[i+1])
+                # determine distance
+                distance = self.new_packages.address_matrix.lookupDistance(location_code1, location_code2)
+                # deliver package
+                time = truck.deliverPackage(list_to_deliver[i], distance)
+                self.new_packages.updateStatusByPackageID(list_to_deliver[i], f"Delivered at {time}")
+            print(f"truck {truck.truck_number} drove {truck.miles} miles")
+
+        to_deliver = []
+        # Now regular packages, until there are no packages
+        for truck in self.truck_list:
+            to_deliver = truck.packages
+            for i in range(len(to_deliver)-1):
+                location_code1 = self.new_packages.returnLocationCode(to_deliver[i])
+                location_code2 = self.new_packages.returnLocationCode(to_deliver[i+1])
+                # determine distance
+                distance = self.new_packages.address_matrix.lookupDistance(location_code1, location_code2)
+                # deliver package
+                time = truck.deliverPackage(to_deliver[i], distance)
+                self.new_packages.updateStatusByPackageID(to_deliver[i], f"Delivered at {time}")
+            self.total_distance_traveled = self.total_distance_traveled + truck.miles
+        truck.updatePackageList(to_deliver)
+        print(f"trucks totaled {self.total_distance_traveled} miles")
+
+        # check back on timed delivery packages
+        for truck in self.truck_list:
+            list_to_deliver = truck.getTimeSensitivePackagesList(self.new_packages)
+            for item in list_to_deliver:
+                print(f"ready for delivery: {item}")
+
+
+
+
+
+            # step two - determination location index for each package number
+
+
+
 
 
 

@@ -91,6 +91,20 @@ class HashTable:
             if self.array[i].returnLinkedListData() is not None:
                 self.array[i].printAllLinkedList()
 
+    # Look for an item in the hash table given it's unique index. Returns data of that entry
+    def findDataInHashTable(self, index):
+        key = self.calculateIndex(index)
+        temp = self.array[key].head
+        while temp.next:
+            if index == temp.data.id:
+                return temp.data
+            else:
+                temp = temp.next
+        # otherwise one one list member
+        return temp.data
+
+
+
 
 # is a list that includes the distances to all points from a given point
 class AdjacencyList:
@@ -123,9 +137,11 @@ class DistanceMatrix:
     def addToMatrix(self, source_index, distance_obj):
         self.array[source_index].addDistanceToAdacencyList(distance_obj)
         # set the converse
-        converse_distance = Package.Distance(source_index, distance_obj.distance)
-        self.array[distance_obj.location].addDistanceToAdacencyList(converse_distance)
 
     # Returns the distance between two points. The inputs are both integers, that represent an address.
     def lookupDistance(self, source_index, dest_index):
-        return self.array[source_index].returnDistance(dest_index)
+        # determine the larger index
+        if source_index > dest_index:
+            return self.array[source_index].returnDistance(dest_index)
+        else:
+            return self.array[dest_index].returnDistance(source_index)

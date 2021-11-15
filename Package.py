@@ -26,6 +26,9 @@ class Package:
     def returnAddress(self):
         return self.address
 
+    def returnLocationCode(self):
+        return self.location_code
+
 
 # Class to manage data related to a distance between points
 class Distance:
@@ -55,6 +58,7 @@ class PackagesToBeDelivered:
         self.loadPackageFile()
         self.createLocationIndex()
         self.loadDistanceFile()
+        self.populateLocationCodes(self.location_index)
 
     # Prints all packages in the given hash table
     def printAllPackages(self):
@@ -72,13 +76,13 @@ class PackagesToBeDelivered:
     # Populate all the data members of the hash table with a location code. This is reliant on a key dictionary to be
     # present
     def populateLocationCodes(self, key_dictionary):
-        for i in range(len(self.array)):
-            if self.array[i].returnLinkedListData() is None:
+        for i in range(len(self.packageHash.array)):
+            if self.packageHash.array[i].returnLinkedListData() is None:
                 i = i + 1
             else:
-                street_address = self.array[i].returnLinkedListData().returnAddress()
+                street_address = self.packageHash.array[i].returnLinkedListData().returnAddress()
                 index = key_dictionary[street_address]
-                self.array[i].returnLinkedListData().location_code = index
+                self.packageHash.array[i].returnLinkedListData().location_code = index
 
 
     # Return the package numbers of all the packages
@@ -93,7 +97,9 @@ class PackagesToBeDelivered:
 
     # Return location Code
     def returnLocationCode(self, index):
-        return self.array[index].returnLinkedListData().location_code
+        package_data = self.packageHash.findDataInHashTable(index)
+        return package_data.location_code
+
 
     # Load the packages in from a CSV file
     def loadPackageFile(self):

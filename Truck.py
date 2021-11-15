@@ -14,13 +14,16 @@ class TimedDelivery:
     # check to see whether or not package is eligible for delivery at a given point in time. Returns true if
     # the package is deliverable, false if it is too early for delivery
     def checkDeliveryElligibility(self, current_time):
-        if self.before_after == 0:  # If it is supposed to be delivered before the given time, the answer is always yes
+        if self.TimedDelivery[1] == 0:  # If it is supposed to be delivered before the given time, the answer is always yes
             return True
         else:  # Must be after a certain time, so check the condition
             if self.determineIfTimeIsAfter(current_time) is True:
                 return True
             else:
                 return False
+
+    def returnPackageID(self):
+        return self.TimedDelivery[2]
 
     # Given a time as a parameter, determines if the time entered as a parameter is after the objects given time.
     # if so returns true, else returns false. Assumes time given is military time, with leading zeroes included
@@ -55,6 +58,8 @@ class Truck:
         self.packages_timed_delivery = DataStructures.LinkedList()  # Packages with instructions around delivery times
         self.num_of_timed_packages = 0
         self.num_of_packages = 0
+        self.delivered_packages = []
+        self.truck_time = "08:00:00"  # "local time" on the truck
 
     # Returns the list of packages to be delivered
     def returnPackages(self):
@@ -126,4 +131,98 @@ class Truck:
         self.packages.remove(package_number)
         self.addToTimedDeliveryList(time, before_after, package_number)
         self.num_of_packages = self.num_of_packages-1
+
+    # Return a list of time sensitive packages that are eligible for delivery. Makes sure that they
+    # have not already been delivered, and that they are currently eligible by time.
+    def getTimeSensitivePackagesList(self, packages):
+        clock = self.truck_time
+        number_of_deliverable_packages = 0
+        deliverable_package_list = []
+        temp = self.packages_timed_delivery.head
+        delivered_check = False
+        while temp.next is not None:
+            # check if the package is already delivered
+            for item in self.delivered_packages:
+                if item == temp.data.returnPackageID():
+                    delivered_check = True
+            if delivered_check is False:
+                time = TimedDelivery(clock, 0, 0)
+                is_deliverable = temp.data.checkDeliveryElligibility(time)
+                if is_deliverable:
+                    number_of_deliverable_packages = number_of_deliverable_packages+1
+                    package_id = temp.data.returnPackageID()
+                    deliverable_package_list.append(package_id)
+                    temp = temp.next
+                else:
+                    temp = temp.next
+        return deliverable_package_list
+
+    def addTimeToClock(self, minutes):
+        hour = 0
+        minute = 0
+        seconds = 0
+        if minutes > 60:
+            hour = int(minutes / 60)
+        minute = int(minutes % 60)
+        left_over = minutes - ((hour * 60) + minute)
+        seconds = int(left_over * 60)
+        existing_hour = int(self.truck_time[:2])
+        existing_minute = int(self.truck_time[3:5])
+        existing_second = int(self.truck_time[7:9])
+
+        new_hour = hour + existing_hour
+        new_minute = minute + existing_minute
+        new_second = seconds + existing_second
+
+        if new_second > 60:
+            num = new_second % 60
+            new_second = num
+            new_minute = new_minute + 1
+
+        if new_minute > 60:
+            num = new_minute % 60
+            new_minute = num
+            new_hour = new_hour + 1
+
+        # Convert back to string
+        if new_second < 10:
+            string_second = "0" + str(new_second)
+        else:
+            string_second = str(new_second)
+
+        if new_minute < 10:
+            string_minute = "0" + str(new_minute)
+        else:
+            string_minute = str(new_minute)
+
+        if new_hour < 10:
+            string_hour = "0" + str(new_hour)
+        else:
+            string_hour = str(new_hour)
+
+        combined_time_string = string_hour + ":" + string_minute + ":" + string_second
+        self.truck_time = combined_time_string
+
+
+
+    def deliverPackage(self, package_number, distance):
+        self.delivered_packages.append(package_number)
+        self.miles = self.miles + distance
+        time_elapsed = distance / 18
+        minutes = time_elapsed * 60
+        self.addTimeToClock(minutes)
+        return self.truck_time
+
+    # removes packages from the list to be delivered once they are delivered.
+    def updatePackageList(self, list_of_delivered_packages):
+        for item in self.packages:
+            for package in list_of_delivered_packages:
+                if item == package:
+                    self.packages.remove(package)
+
+
+
+
+
+
 

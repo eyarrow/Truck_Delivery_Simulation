@@ -26,6 +26,8 @@ if __name__ == '__main__':
     # Load any time sensitive packages onto trucks that have not been loaded already
     simulation.loadRemainingTimedDeliveries()
     simulation.loadTrucksToMaxCapacity()
+    simulation.runTruckSimulation()
+
 
     simulation.printPackagesCurrentStatus()
 
