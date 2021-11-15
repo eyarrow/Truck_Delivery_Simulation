@@ -138,6 +138,7 @@ class Truck:
         clock = self.truck_time
         number_of_deliverable_packages = 0
         deliverable_package_list = []
+        undeliverable = []
         temp = self.packages_timed_delivery.head
         trail = temp
         delivered_check = False
@@ -148,10 +149,19 @@ class Truck:
                 number_of_deliverable_packages = number_of_deliverable_packages+1
                 package_id = temp.data.returnPackageID()
                 deliverable_package_list.append(package_id)
-                temp = temp.next
+                self.num_of_timed_packages = self.num_of_timed_packages - 1
+                trail.next = temp.next
+                temp = None
+                temp = trail.next
             else:
+                undeliverable.append(temp.data)
                 temp = temp.next
-        # remove the "delivered packages from the early list
+                trail = trail.next
+        print(f"List to be delivered after run: ")
+        temp = self.packages_timed_delivery.head
+        while temp.next is not None:
+            print(temp.data.returnPackageID())
+            temp = temp.next
         return deliverable_package_list
 
     def addTimeToClock(self, minutes):
