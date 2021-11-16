@@ -11,6 +11,9 @@ import Simulation
 if __name__ == '__main__':
     # Load the package data for the simulation, including packages to be delivered, addresses, and their distance
     # information
+
+
+    # create simulation object
     simulation = Simulation.Simulation([1, 2], 'packages.csv', 'distances.csv', 'addresslist.csv', 27, 16)
 
     # Load packages that need to be on specific trucks
@@ -20,29 +23,37 @@ if __name__ == '__main__':
     # Load parameters for time sensitive deliveries
     simulation.setTimeSensitiveDeliveryTimes('10:30', 0, [13, 14, 16, 20, 29, 30, 31, 34, 37, 40])
     simulation.setTimeSensitiveDeliveryTimes('09:00', 0, [15])
-    # simulation.setTimeSensitiveDeliveryTimes('09:05', 1, [6, 25, 28, 32])  # Not at depo until 9:05, 25
-        # will need to be loaded first has a deadline of 10:30
     simulation.setTimeSensitiveDeliveryTimes('10:20', 1, [9])  # needs delivery address updated
 
     # Load any time sensitive packages onto trucks that have not been loaded already
     simulation.loadRemainingTimedDeliveries()
+    simulation.removePackagesThatAreNotReadyAtDepo([6, 25, 28, 32])
     simulation.loadTrucksToMaxCapacity()
     simulation.runTruckSimulation()
-    print(simulation.clock)
-    print(simulation.total_distance_traveled)
 
 
+    print("Current Delivery Status: ")
+    print("_______________________________________________________________________________")
     simulation.printPackagesCurrentStatus()
+    print("_______________________________________________________________________________")
     print(f"Total Miles Traveled: {simulation.total_distance_traveled}")
-    myList = simulation.experimentingWithLists()
-    print(myList)
+
+    simulation.setTimeSensitiveDeliveryTimes('10:30', 0, [6])  # Not at depo until 9:05, 25
+    simulation.newPackagesAtDepot([25, 28, 32])
 
 
+    simulation.reloadTrucks()
 
+    print("After Second Round: ")
+    print("_______________________________________________________________________________")
+    simulation.printPackagesCurrentStatus()
+    print("_______________________________________________________________________________")
+    print(f"Total Miles Traveled: {simulation.total_distance_traveled}")
 
+    simulation.deliverSubsequentRounds()
 
-
-
-
-
-    print("There is something about Mary")
+    print("After Last Delivery: ")
+    print("_______________________________________________________________________________")
+    simulation.printPackagesCurrentStatus()
+    print("_______________________________________________________________________________")
+    print(f"Total Miles Traveled: {simulation.total_distance_traveled}")

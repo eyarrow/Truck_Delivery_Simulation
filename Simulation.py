@@ -31,6 +31,13 @@ class Simulation:
             truck_list.append(new_truck)
         return truck_list
 
+    # used for adding packages that have recently arrived at the depo
+    def newPackagesAtDepot(self, list_of_packages):
+        for item in list_of_packages:
+            self.packages_to_be_delivered.append(item)
+            package_to_update = self.new_packages.packageHash.findDataInHashTable(item)
+            package_to_update.updateDeliveryStatus('at the hub')
+
     # Used to enter packages that need to be on a specific truck. This might be a route requirement, or can be used
     # to keep specific packages delivered together. The value of "truck" is an integer that is the truck number.
     # list_of_packages are the packages that must be delivered on the given truck.
@@ -125,6 +132,14 @@ class Simulation:
     def printPackagesCurrentStatus(self):
         self.new_packages.printAllPackages()
 
+    # Removes packages from the self.packages_to_be_delivered list. These may be packages
+    # that are not ready to be delivered for whatever reason.
+    def removePackagesThatAreNotReadyAtDepo(self, list_of_package_numbers):
+        for item in list_of_package_numbers:
+            self.packages_to_be_delivered.remove(item)
+            package_to_update = self.new_packages.packageHash.findDataInHashTable(item)
+            package_to_update.updateDeliveryStatus('Delayed, Depot is awaiting arrival')
+
     # Loads trucks with packages up to their capacity
     def loadTrucksToMaxCapacity(self):
         for truck in self.truck_list:
@@ -142,7 +157,7 @@ class Simulation:
         self.total_distance_traveled = self.total_distance_traveled + distance
         self.new_packages.updateStatusByPackageID(list_of_packages_to_deliver[0], f"Delivered at {time}")
 
-    # Run a singular truck simulation **test**
+    # Run a singular truck simulation
     def runTruckSimulation(self):
         # start with timed packages
         list_to_deliver = []
@@ -151,6 +166,7 @@ class Simulation:
         # Start with timed deliveries to make sure early packages make it
         for truck in self.truck_list:
             list_to_deliver = truck.getTimeSensitivePackagesList(self.new_packages)
+            print(f"List to deliver, truck {truck.truck_number}: {list_to_deliver}")
             while len(list_to_deliver) > 0:
                 location_code2 = self.new_packages.returnLocationCode(list_to_deliver[0])
                 self.updateDelivery(truck, current_location, location_code2, list_to_deliver)
@@ -170,37 +186,82 @@ class Simulation:
                 to_deliver.remove(item)
         truck.updatePackageList(to_deliver)
 
+        # Update address package 9
+        address_to_update = self.new_packages.packageHash.findDataInHashTable(9)
+        address_to_update.updateAddress('410 S State St', 'Salt Lake City', '84111')
         # check back on timed delivery packages
         for truck in self.truck_list:
             list_to_deliver = truck.getTimeSensitivePackagesList(self.new_packages)
-            print(f"truck {truck.truck_number} has these early packages remaining: {list_to_deliver}")
-            for item in list_to_deliver:
-                print(item)
+            while len(list_to_deliver) > 0:
+                location_code2 = self.new_packages.returnLocationCode(list_to_deliver[0])
+                self.updateDelivery(truck, current_location, location_code2, list_to_deliver)
+                current_location = location_code2
+                item = list_to_deliver[0]
+                list_to_deliver.remove(item)
 
-    # testing 123
+    # reload the trucks after first run. Used for subsequent runs.
+    def reloadTrucks(self):
+        for truck in self.truck_list:
+            truck.num_of_timed_packages = 0
+            truck.num_of_packages = 0
+            truck.packages = []
+            truck.packages_timed_delivery = []
+        self.loadRemainingTimedDeliveries()
+        #split remaining load between the trucks.
+        least_loaded_truck = 0
+        max = 0
+        index = 0
+        loaded_deliveries = []
+        while self.packages_to_be_delivered:
+            for trucks in self.truck_list:
+                num = trucks.num_of_packages
+                if max == 0:
+                    max = num
+                    least_loaded_truck = trucks.truck_number
+                else:
+                    if num < max:
+                        least_loaded_truck = trucks.truck_number
+                    else:  # num is greater than max, num is the new max
+                        max = num
+            package = self.packages_to_be_delivered[0]
+            self.loadPackageByTruckNumber(least_loaded_truck, self.packages_to_be_delivered[0])
+            loaded_deliveries.append(package)
+            # for item in self.packages_to_be_delivered:
+            #     if item == package_number:
+            #         self.packages_to_be_delivered.remove(package_number)
 
 
 
-    # test
-    def experimentingWithLists(self):
-        def sortOrder(myList):
-            time = myList[0]
-            hour, minute = map(int, time.split(':'))
-            return (hour * 60) + minute
 
 
-        myList = []
-        tuple1 = ('8:15', 0, 21)
-        tuple2 = ('9:00', 1, 22)
-        tuple3 = ('8:00', 0, 30)
-        tuple4 = ('9:30', 1, 20)
-        myList.append(tuple1)
-        myList.append(tuple2)
-        myList.append(tuple3)
-        myList.append(tuple4)
-        print(myList)
-        myList.sort(key=sortOrder)
-        return myList
+
+    # Used to deliver subsequent loads of trucks
+    def deliverSubsequentRounds(self):
+        current_location = 0
+        for truck in self.truck_list:
+            list_to_deliver = truck.getTimeSensitivePackagesList(self.new_packages)
+            while len(list_to_deliver) > 0:
+                location_code2 = self.new_packages.returnLocationCode(list_to_deliver[0])
+                self.updateDelivery(truck, current_location, location_code2, list_to_deliver)
+                current_location = location_code2
+                item = list_to_deliver[0]
+                list_to_deliver.remove(item)
+
+                # Now regular packages, until there are no packages
+                for truck in self.truck_list:
+                    to_deliver = truck.packages
+                    total_miles = 0
+                    while len(to_deliver) > 0:
+                        location_code2 = self.new_packages.returnLocationCode(to_deliver[0])
+                        self.updateDelivery(truck, current_location, location_code2, to_deliver)
+                        current_location = location_code2
+                        item = to_deliver[0]
+                        to_deliver.remove(item)
+                truck.updatePackageList(to_deliver)
+
+
+
+
 
 
 

@@ -29,6 +29,10 @@ class Package:
     def returnLocationCode(self):
         return self.location_code
 
+    def updateAddress(self, new_address, new_city, new_zip):
+        self.address = new_address
+        self.city = new_city
+        self.zip = new_zip
 
 # Class to manage data related to a distance between points
 class Distance:

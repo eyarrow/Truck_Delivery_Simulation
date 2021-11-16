@@ -11,38 +11,12 @@ class TimedDelivery:
     def __init__(self, time, before_after, package_number):
         self.TimedDelivery = (time, before_after, package_number)
 
-    # check to see whether or not package is eligible for delivery at a given point in time. Returns true if
-    # the package is deliverable, false if it is too early for delivery
-    def checkDeliveryElligibility(self, current_time):
-        if self.TimedDelivery[1] == 0:  # If it is supposed to be delivered before the given time, the answer is always yes
-            return True
-        else:  # Must be after a certain time, so check the condition
-            if self.determineIfTimeIsAfter(current_time) is True:
-                return True
-            else:
-                return False
+
 
     def returnPackageID(self):
         return self.TimedDelivery[2]
 
-    # Given a time as a parameter, determines if the time entered as a parameter is after the objects given time.
-    # if so returns true, else returns false. Assumes time given is military time, with leading zeroes included
-    def determineIfTimeIsAfter(self, time):
-        parse_hour = self.TimedDelivery[0][:2]
-        parse_minute = self.TimedDelivery[0][3:5]
-        parse_given_hour = time.TimedDelivery[0][:2]
-        parse_given_minute = time.TimedDelivery[0][3:5]
 
-        if parse_given_hour > parse_hour:
-            return True
-        else:
-            if parse_given_hour < parse_hour:  # if given hour is before objects hour
-                return False
-            else:
-                if parse_given_minute < parse_minute:  # if given minute is before objects minutes
-                    return False
-                else:
-                    return True
 
 
 # Class to manage each individual truck throughout the delivery process. "packages" represent all packages that are
@@ -55,11 +29,41 @@ class Truck:
         self.miles = miles
         self.location = location
         self.packages = []  # List of packages with no special instructions
-        self.packages_timed_delivery = DataStructures.LinkedList()  # Packages with instructions around delivery times
+        self.packages_timed_delivery = []  # Packages with instructions around delivery times
         self.num_of_timed_packages = 0
         self.num_of_packages = 0
         self.delivered_packages = []
         self.truck_time = "08:00:00"  # "local time" on the truck
+
+    # Given a time as a parameter, determines if the time entered as a parameter is after the objects given time.
+    # if so returns true, else returns false. Assumes time given is military time, with leading zeroes included
+    def determineIfTimeIsAfter(self, delivery_time):
+        hour, minute = map(int, delivery_time.split(':'))
+
+        given_time = self.truck_time[:5]
+        given_hour, given_minute = map(int, given_time.split(':'))
+
+        if given_hour > hour:
+            return True
+        else:
+            if given_hour < hour:  # if given hour is before objects hour
+                return False
+            else:
+                if given_minute < minute:  # if given minute is before objects minutes
+                    return False
+                else:
+                    return True
+
+    # check to see whether or not package is eligible for delivery at a given point in time. Returns true if
+    # the package is deliverable, false if it is too early for delivery
+    def checkDeliveryElligibility(self, delivery_time, before_after_flag):
+        if before_after_flag == 0:  # If it is supposed to be delivered before the given time, the answer is always yes
+            return True
+        else:  # Must be after a certain time, so check the condition
+            if self.determineIfTimeIsAfter(delivery_time) is True:
+                return True
+            else:
+                return False
 
     # Returns the list of packages to be delivered
     def returnPackages(self):
@@ -80,7 +84,7 @@ class Truck:
     # Add a package to the package list
     def addToPackageList(self, package_number):
         self.packages.append(package_number)
-        self.num_of_packages = self.num_of_packages+1
+        self.num_of_packages = self.num_of_packages + 1
 
     # Checks to see if package number provided already exists on list. If it does returns true
     def checkIfPackageOnPackageList(self, package_number):
@@ -93,70 +97,60 @@ class Truck:
     # Add a package to the time delivery list. These are packages that need to be delivered before or after a given
     # time
     def addToTimedDeliveryList(self, time, before_after, package_number):
-        new_timed_delivery = TimedDelivery(time, before_after, package_number)
+        def sortOrder(myList):
+            time = myList[0]
+            hour, minute = map(int, time.split(':'))
+            return (hour * 60) + minute
+
+        new_timed_delivery = (time, before_after, package_number)
+        self.packages_timed_delivery.append(new_timed_delivery)
         self.num_of_timed_packages = self.num_of_timed_packages + 1
-        # check to see if Linked list has data
-        iterate = self.packages_timed_delivery  # linked list object
-        trail = None
-        temp = None
-        # If the list is empty add tne new node
-        if self.packages_timed_delivery.head.data is None:
-            self.packages_timed_delivery.addToLinkedList(new_timed_delivery)
-        # If there are members in the list, there are existing nodes. Check to see if the first node is greater
-        # than the incoming one
-        else:
-            if new_timed_delivery.determineIfTimeIsAfter(self.packages_timed_delivery.head.data):
-                temp = self.packages_timed_delivery.head
-                new_delivery = DataStructures.Node(new_timed_delivery)
-                new_delivery.next = temp
-                self.packages_timed_delivery.head = new_delivery
-            else:  # iterate until we find a spot
-                trail = self.packages_timed_delivery.head
-                iterate = self.packages_timed_delivery.head.next
-                while iterate:
-                    if new_timed_delivery.determineIfTimeIsAfter(iterate.data):
-                        new_delivery = DataStructures.Node(new_timed_delivery)
-                        trail.next = new_delivery
-                        new_delivery.next = iterate
-                        return
-                    else:
-                        trail = iterate
-                        iterate = iterate.next
-                # add at the end
-                self.packages_timed_delivery.addToLinkedList(new_timed_delivery)
+        self.packages_timed_delivery.sort(key=sortOrder)
 
     # Move a package for the normal delivery schedule to a requested time delivery. The timed delivery information
     # must be included in parameters, and items will be removed from the regular list once prioritized.
     def moveFromNormalDeliveryToTimedDelivery(self, time, before_after, package_number):
         self.packages.remove(package_number)
         self.addToTimedDeliveryList(time, before_after, package_number)
-        self.num_of_packages = self.num_of_packages-1
+        self.num_of_packages = self.num_of_packages - 1
 
     # Return a list of time sensitive packages that are eligible for delivery. Makes sure that they
     # have not already been delivered, and that they are currently eligible by time.
     def getTimeSensitivePackagesList(self, packages):
-        clock = self.truck_time
-        number_of_deliverable_packages = 0
-        deliverable_package_list = []
-        undeliverable = []
-        temp = self.packages_timed_delivery.head
-        trail = temp
-        while temp.next is not None:
-            time = TimedDelivery(clock, 0, 0)
-            is_deliverable = temp.data.checkDeliveryElligibility(time)
-            if is_deliverable:
-                number_of_deliverable_packages = number_of_deliverable_packages+1
-                self.num_of_timed_packages = self.num_of_timed_packages - 1
-                package_id = temp.data.returnPackageID()
-                print(f"package id returned is: {package_id}")
-                deliverable_package_list.append(package_id)
-                temp = temp.next
+        # clock = self.truck_time[:5]
+        # number_of_deliverable_packages = 0
+        # deliverable_package_list = []
+        # undeliverable = []
+        # temp = self.packages_timed_delivery.head
+        # trail = temp
+        # while temp.next is not None:
+        #     time = TimedDelivery(clock, 0, 0)
+        #     is_deliverable = temp.data.checkDeliveryElligibility(time)
+        #     if is_deliverable:
+        #         number_of_deliverable_packages = number_of_deliverable_packages+1
+        #         self.num_of_timed_packages = self.num_of_timed_packages - 1
+        #         package_id = temp.data.returnPackageID()
+        #         print(f"package id returned is: {package_id}")
+        #         deliverable_package_list.append(package_id)
+        #         temp = temp.next
+        #     else:
+        #         undeliverable.append(temp.data)
+        #         temp = temp.next
+        # print(f"These are undeliverable: {undeliverable}")
+        hold_list = []
+        ready_list = []
+        delivery_values = self.packages_timed_delivery
+        for item in delivery_values:
+            is_eligible = self.checkDeliveryElligibility(item[0], item[1])
+            if is_eligible:
+                package_id = item[2]
+                ready_list.append(package_id)
             else:
-                undeliverable.append(temp.data)
-                temp = temp.next
-        print(f"These are undeliverable: {undeliverable}")
-        return deliverable_package_list
+                hold_list.append(item)
+        self.packages_timed_delivery = hold_list
+        return ready_list
 
+    # Increments the truck clock
     def addTimeToClock(self, minutes):
         hour = 0
         minute = 0
@@ -203,8 +197,6 @@ class Truck:
         combined_time_string = string_hour + ":" + string_minute + ":" + string_second
         self.truck_time = combined_time_string
 
-
-
     def deliverPackage(self, package_number, distance):
         self.delivered_packages.append(package_number)
         self.miles = self.miles + distance
@@ -219,12 +211,3 @@ class Truck:
             for package in list_of_delivered_packages:
                 if item == package:
                     self.packages.remove(package)
-
-
-
-
-
-
-
-
-
