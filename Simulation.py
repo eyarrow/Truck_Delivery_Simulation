@@ -138,32 +138,37 @@ class Simulation:
 
     # Loads the remaining timed deliveries and attempts to distribute them evenly across trucks.
     def loadRemainingTimedDeliveries(self):
-        least_loaded_truck = 0
-        max = 0
-        index = 0
-        loaded_deliveries = []
-        while self.timed_requests:
-            for trucks in self.truck_list:
-                num = trucks.num_of_timed_packages
-                if max == 0:
-                    max = num
-                    least_loaded_truck = trucks.truck_number
-                else:
-                    if num < max:
-                        least_loaded_truck = trucks.truck_number
-                    else:  # num is greater than max, num is the new max
-                        max = num
-        # Add the package to the least loaded truck
-            time = self.timed_requests[index][0]
-            before_after = self.timed_requests[index][1]
-            package_number = self.timed_requests[index][2]
-            self.loadTimedPackagedByTruckNumber(least_loaded_truck, time, before_after, package_number)
-            package_tuple = (time, before_after, package_number)
-            self.timed_requests.remove(package_tuple)
-            loaded_deliveries.append(package_number)
-            for item in self.packages_to_be_delivered:
-                if item == package_number:
-                    self.packages_to_be_delivered.remove(package_number)
+        # Split the packages between two trucks
+        length = len(self.timed_requests)
+        mid = length // 2
+        list1 = self.timed_requests[:mid]
+        list2 = self.timed_requests[mid:]
+        # least_loaded_truck = 0
+        # max = 0
+        # index = 0
+        # loaded_deliveries = []
+        # while self.timed_requests:
+        #     for trucks in self.truck_list:
+        #         num = trucks.num_of_timed_packages
+        #         if max == 0:
+        #             max = num
+        #             least_loaded_truck = trucks.truck_number
+        #         else:
+        #             if num < max:
+        #                 least_loaded_truck = trucks.truck_number
+        #             else:  # num is greater than max, num is the new max
+        #                 max = num
+        # # Add the package to the least loaded truck
+        #     time = self.timed_requests[index][0]
+        #     before_after = self.timed_requests[index][1]
+        #     package_number = self.timed_requests[index][2]
+        #     self.loadTimedPackagedByTruckNumber(least_loaded_truck, time, before_after, package_number)
+        #     package_tuple = (time, before_after, package_number)
+        #     self.timed_requests.remove(package_tuple)
+        #     loaded_deliveries.append(package_number)
+        #     for item in self.packages_to_be_delivered:
+        #         if item == package_number:
+        #             self.packages_to_be_delivered.remove(package_number)
 
 
     # Load specific package to specific truck
