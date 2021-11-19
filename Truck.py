@@ -117,26 +117,6 @@ class Truck:
     # Return a list of time sensitive packages that are eligible for delivery. Makes sure that they
     # have not already been delivered, and that they are currently eligible by time.
     def getTimeSensitivePackagesList(self, packages):
-        # clock = self.truck_time[:5]
-        # number_of_deliverable_packages = 0
-        # deliverable_package_list = []
-        # undeliverable = []
-        # temp = self.packages_timed_delivery.head
-        # trail = temp
-        # while temp.next is not None:
-        #     time = TimedDelivery(clock, 0, 0)
-        #     is_deliverable = temp.data.checkDeliveryElligibility(time)
-        #     if is_deliverable:
-        #         number_of_deliverable_packages = number_of_deliverable_packages+1
-        #         self.num_of_timed_packages = self.num_of_timed_packages - 1
-        #         package_id = temp.data.returnPackageID()
-        #         print(f"package id returned is: {package_id}")
-        #         deliverable_package_list.append(package_id)
-        #         temp = temp.next
-        #     else:
-        #         undeliverable.append(temp.data)
-        #         temp = temp.next
-        # print(f"These are undeliverable: {undeliverable}")
         hold_list = []
         ready_list = []
         delivery_values = self.packages_timed_delivery
@@ -199,7 +179,11 @@ class Truck:
 
     def deliverPackage(self, package_number, distance):
         self.delivered_packages.append(package_number)
+        print(f"Miles Audit:")
+        print(f"Truck {self.truck_number} has driven {self.miles} miles")
+        print(f"additional distance is: {distance}")
         self.miles = self.miles + distance
+        print(f"which makes a total of: {self.miles}")
         time_elapsed = distance / 18
         minutes = time_elapsed * 60
         self.addTimeToClock(minutes)

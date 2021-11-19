@@ -24,7 +24,7 @@ class Simulation:
         self.packages_to_be_delivered = self.new_packages.returnPackageIndices()
 
     # Takes a list of package numbers. Returns the optimal order they should be delivered in, using a
-    # greedy algorithm to compute. Returns a list of package numbers
+    # greedy algorithm to compute. Returns a list of package numbers. Emulates a "nearest neighbor" approach
     def discoverShortestPath(self, starting_location_code, package_list):
         vertex_list = []  # Holds the list of location codes
         package_with_code = {}
@@ -42,7 +42,7 @@ class Simulation:
         # Get the ideal ordering for delivering the given packages. Produces the list of location codes
         # in order.
         while vertex_list:
-            nearest_neighbor = self.greedy(starting_location_code, vertex_list)
+            nearest_neighbor = self.calculateClosestVertex(starting_location_code, vertex_list)
             nearest_neighbor_list.append(nearest_neighbor)
             starting_location_code = nearest_neighbor
             vertex_list.remove(nearest_neighbor)
@@ -60,7 +60,7 @@ class Simulation:
 
 
     # takes a location code,and a list of potential adjacent vertices. Returns the one that is closest
-    def greedy(self, starting_vertex, potential_adjacent):
+    def calculateClosestVertex(self, starting_vertex, potential_adjacent):
         shortest_distance = 0
         closest_vertex = 0
         for i in range(len(potential_adjacent)):
@@ -73,6 +73,7 @@ class Simulation:
                     shortest_distance = distance
                     closest_vertex = potential_adjacent[i]
         return closest_vertex
+
 
 
 
@@ -211,12 +212,36 @@ class Simulation:
         self.total_distance_traveled = self.total_distance_traveled + distance
         self.new_packages.updateStatusByPackageID(list_of_packages_to_deliver[0], f"Delivered at {time}")
 
-    # Run a singular truck simulation
-    def runTruckSimulation(self):
+    # Returns true if time to check falls within the timerange
+    def determineIfDeliveryFallsInTimeRange(self, start_time, end_time, time_to_check):
+        time_to_check = time_to_check[:5]
+        start_hour, start_minute = map(int, start_time.split(':'))
+        end_hour, end_minute = map(int, end_time.split(':'))
+        time_to_check_hour, time_to_check_minute = map(int, time_to_check.split(':'))
+        if start_hour < time_to_check_hour < end_hour:
+            return True
+        if start_hour > time_to_check_hour > end_hour:
+            return False
+        else:
+            if start_hour == time_to_check_hour and time_to_check_hour < end_hour:
+                return True
+            elif start_hour == time_to_check_hour and time_to_check_hour == end_hour:
+                if start_minute < time_to_check_minute < end_minute:
+                    return True
+                else:
+                    return False
+            else:
+                return False
+
+
+    # Run a singular truck simulation. Will run the simulation until the time specified. (falling between
+    # time_start, and time_end
+    def runTruckSimulation(self, time_start, time_end):
         # start with timed packages
         list_to_deliver = []
         num_of_packages_delivered = 0
         current_location = 0
+        move_to_regular_packages = []
         # Start with timed deliveries to make sure early packages make it
         for truck in self.truck_list:
             list_to_deliver = truck.getTimeSensitivePackagesList(self.new_packages)
@@ -228,6 +253,8 @@ class Simulation:
                 current_location = location_code2
                 item = list_to_deliver[0]
                 list_to_deliver.remove(item)
+                if self.determineIfDeliveryFallsInTimeRange(time_start, time_end, truck.truck_time):
+                    return True
 
         # Now regular packages, until there are no packages
         for truck in self.truck_list:
@@ -240,6 +267,8 @@ class Simulation:
                 current_location = location_code2
                 item = to_deliver[0]
                 to_deliver.remove(item)
+                if self.determineIfDeliveryFallsInTimeRange(time_start, time_end, truck.truck_time):
+                    return True
         truck.updatePackageList(to_deliver)
 
         # Update address package 9
@@ -255,6 +284,8 @@ class Simulation:
                 current_location = location_code2
                 item = list_to_deliver[0]
                 list_to_deliver.remove(item)
+                if self.determineIfDeliveryFallsInTimeRange(time_start, time_end, truck.truck_time):
+                    return True
 
     # reload the trucks after first run. Used for subsequent runs.
     def reloadTrucks(self):
@@ -315,6 +346,33 @@ class Simulation:
                         item = to_deliver[0]
                         to_deliver.remove(item)
                 truck.updatePackageList(to_deliver)
+
+        for truck in self.truck_list:
+            print(f"Truck {truck.truck_number} drove {truck.miles} miles")
+
+
+    def runTimeSensitiveDelivery(self, time_start, time_end):
+        # Load packages that need to be on specific trucks
+        self.truckSpecificDelivery(2, [3, 18, 36, 38])  # requirement: loaded on truck 2
+        self.truckSpecificDelivery(1, [13, 14, 15, 16, 19, 20])  # req: must be delivered together
+
+        # Load parameters for time sensitive deliveries
+        self.setTimeSensitiveDeliveryTimes('10:30', 0, [13, 14, 16, 20, 29, 30, 31, 34, 37, 40])
+        self.setTimeSensitiveDeliveryTimes('09:00', 0, [15])
+        self.setTimeSensitiveDeliveryTimes('10:20', 1, [9])  # needs delivery address updated
+
+        # Load any time sensitive packages onto trucks that have not been loaded already
+        self.loadRemainingTimedDeliveries()
+        self.removePackagesThatAreNotReadyAtDepo([6, 25, 28, 32])
+
+        # Load the rest of the packages until the trucks are full
+        self.loadTrucksToMaxCapacity()
+        run_result = self.runTruckSimulation(time_start, time_end)
+        if run_result:
+            return
+
+
+
 
 
 
