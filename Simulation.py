@@ -23,6 +23,60 @@ class Simulation:
         self.max_num_package_per_truck = max_num_package_per_truck
         self.packages_to_be_delivered = self.new_packages.returnPackageIndices()
 
+    # Takes a list of package numbers. Returns the optimal order they should be delivered in, using a
+    # greedy algorithm to compute. Returns a list of package numbers
+    def discoverShortestPath(self, starting_location_code, package_list):
+        vertex_list = []  # Holds the list of location codes
+        package_with_code = {}
+        nearest_neighbor_list = []
+        sorted_return_list = []
+        # Create a list of tuples that pairs the package number and location_code in the format:
+        # (package_number, location_code). This provides a list that can be returned to the calling
+        # function.
+        for item in package_list:
+            package = self.new_packages.packageHash.findDataInHashTable(item)
+            location_code = package.returnLocationCode()
+            vertex_list.append(location_code)
+            package_with_code[package.id] = location_code
+
+        # Get the ideal ordering for delivering the given packages. Produces the list of location codes
+        # in order.
+        while vertex_list:
+            nearest_neighbor = self.greedy(starting_location_code, vertex_list)
+            nearest_neighbor_list.append(nearest_neighbor)
+            starting_location_code = nearest_neighbor
+            vertex_list.remove(nearest_neighbor)
+
+        # sort tuples in the correct order
+        list_of_packages_to_return = []
+        for i in range(len(nearest_neighbor_list)):
+            for key, value in package_with_code.items():
+                if nearest_neighbor_list[i] == value and key not in sorted_return_list:
+                    sorted_return_list.append(key)
+
+        return sorted_return_list
+
+
+
+
+    # takes a location code,and a list of potential adjacent vertices. Returns the one that is closest
+    def greedy(self, starting_vertex, potential_adjacent):
+        shortest_distance = 0
+        closest_vertex = 0
+        for i in range(len(potential_adjacent)):
+            distance = self.new_packages.address_matrix.lookupDistance(starting_vertex, potential_adjacent[i])
+            if shortest_distance == 0 and closest_vertex == 0:
+                shortest_distance = distance
+                closest_vertex = potential_adjacent[i]
+            else:
+                if shortest_distance > distance:
+                    shortest_distance = distance
+                    closest_vertex = potential_adjacent[i]
+        return closest_vertex
+
+
+
+
     # initializes a set of trucks to be used for the day. Uses the truck numbers as assigned by the calling application
     def initializeTrucks(self, list_of_trucks):
         truck_list = []
@@ -166,6 +220,7 @@ class Simulation:
         # Start with timed deliveries to make sure early packages make it
         for truck in self.truck_list:
             list_to_deliver = truck.getTimeSensitivePackagesList(self.new_packages)
+            list_to_deliver = self.discoverShortestPath(current_location, list_to_deliver)
             print(f"List to deliver, truck {truck.truck_number}: {list_to_deliver}")
             while len(list_to_deliver) > 0:
                 location_code2 = self.new_packages.returnLocationCode(list_to_deliver[0])
@@ -177,6 +232,7 @@ class Simulation:
         # Now regular packages, until there are no packages
         for truck in self.truck_list:
             to_deliver = truck.packages
+            to_deliver = self.discoverShortestPath(current_location, to_deliver)
             total_miles = 0
             while len(to_deliver) > 0:
                 location_code2 = self.new_packages.returnLocationCode(to_deliver[0])
@@ -192,6 +248,7 @@ class Simulation:
         # check back on timed delivery packages
         for truck in self.truck_list:
             list_to_deliver = truck.getTimeSensitivePackagesList(self.new_packages)
+            list_to_deliver = self.discoverShortestPath(current_location, list_to_deliver)
             while len(list_to_deliver) > 0:
                 location_code2 = self.new_packages.returnLocationCode(list_to_deliver[0])
                 self.updateDelivery(truck, current_location, location_code2, list_to_deliver)
@@ -226,9 +283,7 @@ class Simulation:
             package = self.packages_to_be_delivered[0]
             self.loadPackageByTruckNumber(least_loaded_truck, self.packages_to_be_delivered[0])
             loaded_deliveries.append(package)
-            # for item in self.packages_to_be_delivered:
-            #     if item == package_number:
-            #         self.packages_to_be_delivered.remove(package_number)
+
 
 
 
@@ -240,6 +295,7 @@ class Simulation:
         current_location = 0
         for truck in self.truck_list:
             list_to_deliver = truck.getTimeSensitivePackagesList(self.new_packages)
+            list_to_deliver = self.discoverShortestPath(current_location, list_to_deliver)
             while len(list_to_deliver) > 0:
                 location_code2 = self.new_packages.returnLocationCode(list_to_deliver[0])
                 self.updateDelivery(truck, current_location, location_code2, list_to_deliver)
@@ -250,6 +306,7 @@ class Simulation:
                 # Now regular packages, until there are no packages
                 for truck in self.truck_list:
                     to_deliver = truck.packages
+                    to_deliver = self.discoverShortestPath(current_location, to_deliver)
                     total_miles = 0
                     while len(to_deliver) > 0:
                         location_code2 = self.new_packages.returnLocationCode(to_deliver[0])

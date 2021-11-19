@@ -2,6 +2,7 @@
 
 import Package
 
+
 # Class to manage a node object
 class Node:
     def __init__(self, data=None):
@@ -47,21 +48,18 @@ class LinkedList:
     def returnLinkedListData(self):
         return self.head.returnData()
 
-    def returnHead(self):
-        return self.head
+    # def returnHead(self):
+    #     return self.head
 
     # Helper function that returns the next object in the LL
     def returnLinkedListNext(self):
         return self.head.returnNext()
 
-    def setLinkedListData(self, data_to_set):
-        self.head = data_to_set
+    # def setLinkedListData(self, data_to_set):
+    #     self.head = data_to_set
 
-    def setLinkedListNext(self, data_to_set_as_next):
-        self.head.next = data_to_set_as_next
-
-
-
+    # def setLinkedListNext(self, data_to_set_as_next):
+    #     self.head.next = data_to_set_as_next
 
 
 # Managing the Hash Table object. Initialization creates an emtpy hash table of 100 elements with index 0-99, if another
@@ -71,8 +69,8 @@ class HashTable:
         self.size = size
         self.array = [LinkedList() for i in range(self.size)]
 
-    def returnHashData(self):
-        self.array[self].returnLinkedListData(self)
+    # def returnHashData(self):
+    #     self.array[self].returnLinkedListData(self)
 
     # Calculate the index to use given the key value
     def calculateIndex(self, key):
@@ -105,8 +103,6 @@ class HashTable:
                 temp = temp.next
         # otherwise one one list member
         return temp.data
-
-
 
 
 # is a list that includes the distances to all points from a given point
