@@ -290,8 +290,9 @@ class Simulation:
         for item in list2:
             self.new_packages.updateStatusByPackageID(item, status_string)
         remove_list = list1 + list2
-        for item in self.packages_to_be_delivered:  # remove assigned packages
-            for package in remove_list:
+        # remove assigned packages
+        for package in remove_list:
+            for item in self.packages_to_be_delivered:
                 if item == package:
                     self.packages_to_be_delivered.remove(item)
         self.packages_to_be_delivered.remove(9)
@@ -305,23 +306,32 @@ class Simulation:
                 self.packages_to_be_delivered.remove(item)
 
         # run delivery of first set of packages
-        self.runTruckSimulation()
-
+        self.runTruckSimulation(self.truck_list[0], '09:05')
         # re-load trucks, now at the depo
         self.newPackagesAtDepot([25, 28, 32])
-        self.packages_to_be_delivered.append(9)
         self.packages_to_be_delivered.sort()
 
-        # Update address on package 9, this needs to happen after 10:05
+        self.truck_list[0].packages.append(6)
+        # add package 6 to truck 1 and send it back out
+        self.runTruckSimulation(self.truck_list[0], '15:00')
+
+        self.runTruckSimulation(self.truck_list[1], '15:00')
+
+
+        # re-load trucks, now at the depo
+        self.packages_to_be_delivered.append(9)
+
+        # # Update address on package 9, this needs to happen after 10:05
         address_to_update = self.new_packages.packageHash.findDataInHashTable(9)
         address_to_update.updateAddress('410 S State St', 'Salt Lake City', '84111')
 
-        # Deliver package 6:
-        # self.truck_list[0].packages = [6]
+        # Deliver time sensitive packages:
+        # self.truck_list[0].packages = self.packages_to_be_delivered
         # self.runTruckSimulation()
+        # self.packages_to_be_delivered = []
+
         # sort remaining packages into the most advantageous order ahead of time to consolidate packages
         sorted_order = self.discoverShortestPath(0, self.packages_to_be_delivered)
-        self.packages_to_be_delivered = [6]
         for item in sorted_order:
             self.packages_to_be_delivered.append(item)
 
@@ -342,7 +352,8 @@ class Simulation:
             self.truck_list[1].packages.append(item)
             self.packages_to_be_delivered.remove(item)
 
-        self.runTruckSimulation()
+        self.runTruckSimulation(self.truck_list[0], '18:00')
+        self.runTruckSimulation(self.truck_list[1], '18:00')
 
         print("harry")
         self.total_distance_traveled = self.truck_list[0].miles + self.truck_list[1].miles
@@ -353,39 +364,48 @@ class Simulation:
     def checkTime(self, truck):
         print("loverly")
 
+    # Given current location and truck object, returns the truck to the depot. Increments time and distance
+    def returnToTheDepot(self, truck, location):
+        distance_to_depot = self.new_packages.address_matrix.lookupDistance(location, 0)
+        truck.miles = truck.miles + distance_to_depot
+        # add time
+        time_elapsed = distance_to_depot / 18
+        minutes = time_elapsed * 60
+        truck.addTimeToClock(minutes)
+        print(f"Truck {truck.truck_number} added {minutes} minutes")
+        print(f"Truck {truck.truck_number} added {distance_to_depot} miles")
 
     # Run a singular truck simulation. Will run the simulation until the time specified. (falling between
-    # time_start, and time_end
-    def runTruckSimulation(self):
-        # start with timed packages
-        list_to_deliver = []
-        num_of_packages_delivered = 0
+    # time_start, and time_end. If end time is reached returns the truck that reached the time.
+    def runTruckSimulation(self, truck, end_time):
         current_location = 0
-        move_to_regular_packages = []
+        delivered = []
+        to_deliver = truck.packages
+        to_deliver = self.discoverShortestPath(current_location, to_deliver)
 
-        # Now regular packages, until there are no packages
-        for truck in self.truck_list:
-            to_deliver = truck.packages
-            to_deliver = self.discoverShortestPath(current_location, to_deliver)
-            total_miles = 0
-            while len(to_deliver) > 0:
-                location_code2 = self.new_packages.returnLocationCode(to_deliver[0])
-                self.updateDelivery(truck, current_location, location_code2, to_deliver)
-                current_location = location_code2
-                item = to_deliver[0]
-                to_deliver.remove(item)
-               # if self.determineIfDeliveryFallsInTimeRange(time_start, time_end, truck.truck_time):
-                   # return True
-            truck.updatePackageList()
-            # now drive back to the depot
-             # add miles
-            distance_to_depot = self.new_packages.address_matrix.lookupDistance(current_location, 0)
-            truck.miles = truck.miles + distance_to_depot
-            # add time
-            time_elapsed = distance_to_depot / 18
-            minutes = time_elapsed * 60
-            truck.addTimeToClock(minutes)
-            print(f"Truck {truck.truck_number} added {minutes} minutes")
+        total_miles = 0
+        while len(to_deliver) > 0:
+            location_code2 = self.new_packages.returnLocationCode(to_deliver[0])
+            self.updateDelivery(truck, current_location, location_code2, to_deliver)
+            current_location = location_code2
+            item = to_deliver[0]
+            to_deliver.remove(item)
+            delivered.append(item)
+            self.truck_list[0].updatePackageList()
+            if self.truck_list[0].determineIfTimeIsAfter(end_time):
+                for package in self.packages_to_be_delivered:
+                    if item == package:
+                        self.packages_to_be_delivered.remove(item)
+                self.returnToTheDepot(self.truck_list[0], current_location)
+                return self.truck_list[0]
+        self.returnToTheDepot(self.truck_list[0], current_location)
+        for item in delivered:
+            for package in self.packages_to_be_delivered:
+                if item == package:
+                    self.packages_to_be_delivered.remove(item)
+
+
+
 
 
 
