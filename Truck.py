@@ -24,7 +24,7 @@ class TimedDelivery:
 # do have time constraints. These are added as "TimedDelivery" objects which help determine delivery logic. The list
 # is always maintained in sorted order of when the package should be delivered.
 class Truck:
-    def __init__(self, truck_number, miles=0, location='Depot'):
+    def __init__(self, truck_number=-1, miles=0, location='Depot'):
         self.truck_number = truck_number
         self.miles = miles
         self.location = location
@@ -179,19 +179,15 @@ class Truck:
 
     def deliverPackage(self, package_number, distance):
         self.delivered_packages.append(package_number)
-        print(f"Miles Audit:")
-        print(f"Truck {self.truck_number} has driven {self.miles} miles")
-        print(f"additional distance is: {distance}")
         self.miles = self.miles + distance
-        print(f"which makes a total of: {self.miles}")
         time_elapsed = distance / 18
         minutes = time_elapsed * 60
         self.addTimeToClock(minutes)
         return self.truck_time
 
     # removes packages from the list to be delivered once they are delivered.
-    def updatePackageList(self, list_of_delivered_packages):
-        for item in self.packages:
-            for package in list_of_delivered_packages:
+    def updatePackageList(self):
+        for item in self.delivered_packages:
+            for package in self.packages:
                 if item == package:
-                    self.packages.remove(package)
+                    self.packages.remove(item)
