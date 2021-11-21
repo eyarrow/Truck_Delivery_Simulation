@@ -70,7 +70,8 @@ class Simulation:
         for package in self.packages_with_deadline_truck1:
             package.updateDeliveryStatus('Loaded on truck 1 for delivery')
         for package in self.packages_with_deadline_truck2:
-            package.updateDeliveryStatus('Loaded on truck 1 for delivery')
+            package.updateDeliveryStatus('Loaded on truck 2 for delivery')
+
 
 
     # Manages the loading of trucks and their delivery. End_time is the time after which the simulation will
@@ -125,6 +126,8 @@ class Simulation:
         self.movePackageFromOneListToAnother(self.packages_with_no_restrictions, self.packages_not_available, 28)
         self.movePackageFromOneListToAnother(self.packages_with_no_restrictions, self.packages_not_available, 32)
         self.movePackageFromOneListToAnother(self.packages_with_no_restrictions, self.packages_not_available, 9)
+        for package in self.packages_not_available:
+            package.updateDeliveryStatus(f"Awaiting package at hub - in Transit")
         # See how many openings are left
         # truck 1
         total_num_packages_remaining_truck1 = len(self.packages_truck1 + self.packages_with_deadline_truck1)
@@ -164,7 +167,7 @@ class Simulation:
             self.runIndividualTruckSimulation(self.truck2, self.packages_with_deadline_truck2, end_time)
 
         # Will not proceed if the stop time falls before 9:05
-        if self.truck1.determineIfTimeIsAfter('09:05') is False:
+        if self.determineIfTimeIsAfter(end_time, '09:05'):
             return
 
         # Add packages to truck 2
@@ -173,8 +176,8 @@ class Simulation:
         self.movePackageFromOneListToAnother(self.packages_not_available, self.truck2.packages, 28)
         self.movePackageFromOneListToAnother(self.packages_not_available, self.truck2.packages, 32)
         self.movePackageFromOneListToAnother(self.packages_not_available, self.truck2.packages_to_hold, 9)
+        self.truck2.packages_to_hold[0].updateDeliveryStatus('Loaded on truck 2 for delivery')
 
-        self.truck2.packages_to_hold = [(self.truck2.packages_to_hold, '10:20')]
 
         # if there is any space remaining, load truck 2 until it's full.
         truck_space = self.max_num_package_per_truck - (len(self.packages_with_deadline_truck2) +
@@ -184,7 +187,6 @@ class Simulation:
         for package in optimize:
             self.truck2.packages.append(package)
             self.packages_with_no_restrictions.remove(package)
-
 
         self.updateStatusToLoadedOnTruck()
 
@@ -202,17 +204,20 @@ class Simulation:
         # Hand deliver the earliest delivery, so that it makes it on time. (needs to be reusable for subs delivery
         current_location = 0  # At depot
         delivered = []  # tracks delivered packages so they can be removed from the appropriate list.
-        for item in special_handling:
-            # next_stop = self.calculateClosestVertex(current_location, special_handling)
-            truck_time = self.deliverPackage(truck, item, current_location)
-            current_location = item.location_code
-            delivered.append(item)
+        update_address = True
+        update_time = '10:20'
+        while special_handling:
+            next_destination = self.calculateClosestVertex(current_location, special_handling)
+            truck_time = self.deliverPackage(truck, next_destination, current_location)
+            current_location = next_destination.location_code
+            special_handling.remove(next_destination)
             if truck.determineIfTimeIsAfter(time):
-                for item in delivered:
-                    if item in special_handling:
-                        special_handling.remove(item)
                 self.returnToDepotAddMiles(truck, current_location)
                 return
+            if truck.determineIfTimeIsAfter(update_time) and update_address:
+                address_to_update = self.new_packages.packageHash.findDataInHashTable(9)
+                address_to_update.updateAddress('410 S State St', 'Salt Lake City', '84111')
+                update_address = False
         for item in delivered:
             if item in special_handling:
                 special_handling.remove(item)
@@ -225,6 +230,21 @@ class Simulation:
             truck.packages.remove(next_stop)
             if truck.determineIfTimeIsAfter(time):
                 return
+            if truck.determineIfTimeIsAfter(update_time) and update_address == True:
+                address_to_update = self.new_packages.packageHash.findDataInHashTable(9)
+                address_to_update.updateAddress('410 S State St', 'Salt Lake City', '84111')
+                update_address = False
+
+        for item in truck.packages_to_hold:
+            truck_time = self.deliverPackage(truck, item, current_location)
+            current_location = item.location_code
+            truck.packages_to_hold.remove(item)
+            if truck.determineIfTimeIsAfter(time):
+                return
+            if truck.determineIfTimeIsAfter(update_time) and update_address == True:
+                address_to_update = self.new_packages.packageHash.findDataInHashTable(9)
+                address_to_update.updateAddress('410 S State St', 'Salt Lake City', '84111')
+                update_address = False
 
         # If we reach the end before time, return to the depot
         self.returnToDepotAddMiles(truck, current_location)
@@ -252,7 +272,7 @@ class Simulation:
         truck_time = truck.deliverPackage(distance_traveled)
         self.updateTotalMiles(distance_traveled)
 
-    # determines if time 2 is later than time 2
+    # determines if time 2 is later than time 1
     def determineIfTimeIsAfter(self, time1, time2):
         hour_time1, minute_time1 = map(int, time1.split(':'))
         hour_time2, minute_time2 = map(int, time2.split(':'))
@@ -267,4 +287,5 @@ class Simulation:
                     return False
                 else:
                     return True
+
 

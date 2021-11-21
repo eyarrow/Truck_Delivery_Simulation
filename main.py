@@ -18,7 +18,7 @@ if __name__ == '__main__':
 
 
     sim2 = Sim.Simulation('packages.csv', 'distances.csv', 'addresslist.csv', 27, 16)
-    sim2.loadAndDeliver('10:30')
+    sim2.loadAndDeliver('19:00')
 
     sim2.new_packages.printAllPackages()
     print(f"Total Miles traveled: {sim2.total_distance_traveled}")
