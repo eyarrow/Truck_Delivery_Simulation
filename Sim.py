@@ -131,12 +131,17 @@ class Simulation:
         self.packages_with_no_restrictions = self.packages_with_no_restrictions[total_num_packages_to_pull:]
 
         optimized_list = self.discoverShortestPathList(0, to_deliver)
+        list_truck1 = optimized_list[:total_num_packages_remaining_truck1]
+        list_truck2 = optimized_list[total_num_packages_remaining_truck1:]
 
         # Load truck 1
-        # left off here. loading the rest of the packages on to the trucks
-        for i in range(total_num_packages_remaining_truck1):
-            # load truck with correct package from list
-            self.movePackageFromOneListToAnother(optimized_list[i], self.packages_truck1, optimized_list[i].id)
+        while list_truck1:
+            self.movePackageFromOneListToAnother(list_truck1, self.packages_truck1, list_truck1[0].id)
+
+
+        #  and truck 2
+        while list_truck2:
+            self.movePackageFromOneListToAnother(list_truck2, self.packages_truck2, list_truck2[i].id)
 
         self.truck1.packages = self.packages_truck1
         self.truck2.packages = self.packages_truck2
