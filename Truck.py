@@ -33,6 +33,7 @@ class Truck:
         self.num_of_timed_packages = 0
         self.num_of_packages = 0
         self.delivered_packages = []
+        self.packages_to_hold = []
         self.truck_time = "08:00:00"  # "local time" on the truck
 
     # Given a time as a parameter, determines if the time entered as a parameter is after the objects given time.
@@ -182,7 +183,8 @@ class Truck:
         self.miles = self.miles + distance
         time_elapsed = distance / 18
         minutes = time_elapsed * 60
-        self.addTimeToClock(minutes)
+        if distance > 0:
+            self.addTimeToClock(minutes)
         return self.truck_time
 
     # removes packages from the list to be delivered once they are delivered.

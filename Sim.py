@@ -63,9 +63,9 @@ class Simulation:
     # if a package has been loaded on a truck, its status is updated. Runs this on all trucks in a ready status,
     # so not necessary to run more than once
     def updateStatusToLoadedOnTruck(self):
-        for package in self.packages_truck1:
+        for package in self.truck1.packages:
             package.updateDeliveryStatus('Loaded on truck 1 for delivery')
-        for package in self.packages_truck2:
+        for package in self.truck2.packages:
             package.updateDeliveryStatus('Loaded on truck 2 for delivery')
         for package in self.packages_with_deadline_truck1:
             package.updateDeliveryStatus('Loaded on truck 1 for delivery')
@@ -73,8 +73,9 @@ class Simulation:
             package.updateDeliveryStatus('Loaded on truck 1 for delivery')
 
 
-    # Manages the initial loading of the trucks
-    def initialLoad(self):
+    # Manages the loading of trucks and their delivery. End_time is the time after which the simulation will
+    # end. If no time is entered end of day is assumed (19:00
+    def loadAndDeliver(self, end_time='19:00'):
         # Load packages that must be on specific trucks
         # 3, 18,  36, 38 only on truck 2
         self.movePackageFromOneListToAnother(self.packages_with_no_restrictions, self.packages_truck2, 3)
@@ -82,14 +83,20 @@ class Simulation:
         self.movePackageFromOneListToAnother(self.packages_with_no_restrictions, self.packages_truck2, 36)
         self.movePackageFromOneListToAnother(self.packages_with_no_restrictions, self.packages_truck2, 38)
 
-        # Load packages that must be delivered early
-        # 15 by 9 AM
+        # 13, 14, 15, 16, 19, 20 must be delivered together so they will go on truck 1. 13, 14, 16, 20
+        # are early packages)
+        self.movePackageFromOneListToAnother(self.packages_with_no_restrictions, self.packages_truck1, 19)
         self.movePackageFromOneListToAnother(self.packages_with_no_restrictions, self.packages_with_deadline_truck1, 15)
+        self.movePackageFromOneListToAnother(self.packages_with_no_restrictions, self.packages_with_deadline_truck1, 13)
+        self.movePackageFromOneListToAnother(self.packages_with_no_restrictions, self.packages_with_deadline_truck1, 14)
+        self.movePackageFromOneListToAnother(self.packages_with_no_restrictions, self.packages_with_deadline_truck1, 16)
+        self.movePackageFromOneListToAnother(self.packages_with_no_restrictions, self.packages_with_deadline_truck1, 20)
 
-        # 13, 14, 16, 20, 29, 30, 31, 34, 37, 40 by 10:30 am, split evenly between two trucks. (25 arrives late)Run through
+
+        # 29, 30, 31, 34, 37, 40 by 10:30 am, split evenly between two trucks. (25 arrives late)Run through
         # optimization first, so that the order is as beneficial as possible.
         # 6 is a unique case, because it needs to delivered by 10:30 but won't be available until 9:05
-        list_adjacent = [1, 13, 14, 16, 20, 29, 30, 31, 34, 37, 40]
+        list_adjacent = [1, 29, 30, 31, 34, 37, 40]
         adjacent_packages = []
         while list_adjacent:
             for i in range(len(self.packages_with_no_restrictions)):
@@ -117,7 +124,7 @@ class Simulation:
         self.movePackageFromOneListToAnother(self.packages_with_no_restrictions, self.packages_not_available, 25)
         self.movePackageFromOneListToAnother(self.packages_with_no_restrictions, self.packages_not_available, 28)
         self.movePackageFromOneListToAnother(self.packages_with_no_restrictions, self.packages_not_available, 32)
-
+        self.movePackageFromOneListToAnother(self.packages_with_no_restrictions, self.packages_not_available, 9)
         # See how many openings are left
         # truck 1
         total_num_packages_remaining_truck1 = len(self.packages_truck1 + self.packages_with_deadline_truck1)
@@ -141,15 +148,48 @@ class Simulation:
 
         #  and truck 2
         while list_truck2:
-            self.movePackageFromOneListToAnother(list_truck2, self.packages_truck2, list_truck2[i].id)
+            self.movePackageFromOneListToAnother(list_truck2, self.packages_truck2, list_truck2[0].id)
 
         self.truck1.packages = self.packages_truck1
         self.truck2.packages = self.packages_truck2
 
         self.updateStatusToLoadedOnTruck()
 
-        self.runIndividualTruckSimulation(self.truck1, self.packages_with_deadline_truck1, '19:00')
-        self.runIndividualTruckSimulation(self.truck2, self.packages_with_deadline_truck2, '19:00')
+        # Truck two will report to depot to pick up package 9 (appended last because of a delayed
+        # address 10:05). Add 6, 25, 28, 32 available at 9:05
+        self.runIndividualTruckSimulation(self.truck1, self.packages_with_deadline_truck1, end_time)
+        if self.determineIfTimeIsAfter('09:05', end_time):
+            self.runIndividualTruckSimulation(self.truck2, self.packages_with_deadline_truck2, '09:05')
+        else:
+            self.runIndividualTruckSimulation(self.truck2, self.packages_with_deadline_truck2, end_time)
+
+        # Will not proceed if the stop time falls before 9:05
+        if self.truck1.determineIfTimeIsAfter('09:05') is False:
+            return
+
+        # Add packages to truck 2
+        self.movePackageFromOneListToAnother(self.packages_not_available, self.packages_with_deadline_truck2, 6)
+        self.movePackageFromOneListToAnother(self.packages_not_available, self.packages_with_deadline_truck2, 25)
+        self.movePackageFromOneListToAnother(self.packages_not_available, self.truck2.packages, 28)
+        self.movePackageFromOneListToAnother(self.packages_not_available, self.truck2.packages, 32)
+        self.movePackageFromOneListToAnother(self.packages_not_available, self.truck2.packages_to_hold, 9)
+
+        self.truck2.packages_to_hold = [(self.truck2.packages_to_hold, '10:20')]
+
+        # if there is any space remaining, load truck 2 until it's full.
+        truck_space = self.max_num_package_per_truck - (len(self.packages_with_deadline_truck2) +
+                                                        len(self.truck2.packages) + len(self.truck2.packages_to_hold))
+        to_load = self.packages_with_no_restrictions[:truck_space]
+        optimize = self.discoverShortestPathList(0, to_load)
+        for package in optimize:
+            self.truck2.packages.append(package)
+            self.packages_with_no_restrictions.remove(package)
+
+
+        self.updateStatusToLoadedOnTruck()
+
+        self.runIndividualTruckSimulation(self.truck2, self.packages_with_deadline_truck2, end_time)
+
         print(f"Total travel miles truck 1: {self.truck1.miles}")
         print(f"Total travel miles truck 2: {self.truck2.miles}")
 
@@ -163,17 +203,26 @@ class Simulation:
         current_location = 0  # At depot
         delivered = []  # tracks delivered packages so they can be removed from the appropriate list.
         for item in special_handling:
+            # next_stop = self.calculateClosestVertex(current_location, special_handling)
             truck_time = self.deliverPackage(truck, item, current_location)
             current_location = item.location_code
+            delivered.append(item)
             if truck.determineIfTimeIsAfter(time):
+                for item in delivered:
+                    if item in special_handling:
+                        special_handling.remove(item)
+                self.returnToDepotAddMiles(truck, current_location)
                 return
+        for item in delivered:
+            if item in special_handling:
+                special_handling.remove(item)
         # Deliver the remaining packages using some optimization to reduce overall mileage
         # for packages in truck.packages:
         while truck.packages:
             next_stop = self.calculateClosestVertex(current_location, truck.packages)
-            truck_time = self.deliverPackage(truck, truck.packages[0], current_location)
+            truck_time = self.deliverPackage(truck, next_stop, current_location)
             current_location = next_stop.location_code
-            truck.packages.remove(truck.packages[0])
+            truck.packages.remove(next_stop)
             if truck.determineIfTimeIsAfter(time):
                 return
 
@@ -188,7 +237,7 @@ class Simulation:
         distance_traveled = self.new_packages.address_matrix.lookupDistance(current_location, package.location_code)
         truck_time = truck.deliverPackage(distance_traveled)
         self.updateTotalMiles(distance_traveled)
-        package.updateDeliveryStatus(f"Delivered at {truck.truck_time}")
+        package.updateDeliveryStatus(f"Delivered at {truck.truck_time}, On Truck {truck.truck_number}")
 
         return truck_time
 
@@ -202,4 +251,20 @@ class Simulation:
         distance_traveled = self.new_packages.address_matrix.lookupDistance(current_location, 0)
         truck_time = truck.deliverPackage(distance_traveled)
         self.updateTotalMiles(distance_traveled)
+
+    # determines if time 2 is later than time 2
+    def determineIfTimeIsAfter(self, time1, time2):
+        hour_time1, minute_time1 = map(int, time1.split(':'))
+        hour_time2, minute_time2 = map(int, time2.split(':'))
+
+        if hour_time2 > hour_time1:
+            return True
+        else:
+            if hour_time2 < hour_time1:  # if given hour is before objects hour
+                return False
+            else:
+                if minute_time2 < minute_time1:  # if given minute is before objects minutes
+                    return False
+                else:
+                    return True
 
