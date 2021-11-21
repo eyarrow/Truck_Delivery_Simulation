@@ -34,6 +34,8 @@ class Package:
         self.city = new_city
         self.zip = new_zip
 
+
+
 # Class to manage data related to a distance between points
 class Distance:
     def __init__(self, locationCode, distance):
@@ -98,6 +100,20 @@ class PackagesToBeDelivered:
             else:
                 package_list.append(self.packageHash.array[i].returnLinkedListData().id)
         return package_list
+
+    # Returns a list of all the packages in the table
+    def returnAllPackages(self):
+        package_list = []
+        for i in range(len(self.packageHash.array)):
+            if self.packageHash.array[i].returnLinkedListData() is None:
+                i = i + 1
+            else:
+                package_list.append(self.packageHash.array[i].returnLinkedListData())
+        return package_list
+
+    # return a package object. Look up uses the package id which is passed by parameter
+    def returnPackageByID(self, id):
+        return self.packageHash.findDataInHashTable(id)
 
     # Return location Code
     def returnLocationCode(self, index):

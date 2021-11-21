@@ -177,8 +177,8 @@ class Truck:
         combined_time_string = string_hour + ":" + string_minute + ":" + string_second
         self.truck_time = combined_time_string
 
-    def deliverPackage(self, package_number, distance):
-        self.delivered_packages.append(package_number)
+    # Updates distance traveled and clock time for a truck. Takes the distance traveled as a parameter
+    def deliverPackage(self, distance):
         self.miles = self.miles + distance
         time_elapsed = distance / 18
         minutes = time_elapsed * 60
