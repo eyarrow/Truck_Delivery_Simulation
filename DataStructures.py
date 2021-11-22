@@ -3,7 +3,9 @@
 import Package
 
 
-# Class to manage a node object
+# Class to manage a node object. Nodes are used by the Linked List class, and are subsequently used as a component of
+# the Hashtable class. Each Node consists of data, and a next "pointer" which will point to the next element in the list
+# Helper functions are provided to return Node data and the next item.
 class Node:
     def __init__(self, data=None):
         self.data = data
@@ -18,7 +20,7 @@ class Node:
         return self.next
 
 
-# Class to manage the LinkedList class
+# Class to manage the LinkedList class. Each linked list consists of a head element that is a node initially.
 class LinkedList:
     def __init__(self):
         self.head = Node()
@@ -48,29 +50,19 @@ class LinkedList:
     def returnLinkedListData(self):
         return self.head.returnData()
 
-    # def returnHead(self):
-    #     return self.head
-
-    # Helper function that returns the next object in the LL
+    # Helper function that returns the next object in the Linked lis
     def returnLinkedListNext(self):
         return self.head.returnNext()
 
-    # def setLinkedListData(self, data_to_set):
-    #     self.head = data_to_set
-
-    # def setLinkedListNext(self, data_to_set_as_next):
-    #     self.head.next = data_to_set_as_next
-
 
 # Managing the Hash Table object. Initialization creates an emtpy hash table of 100 elements with index 0-99, if another
-# number of hash table elements are not provided.
+# number of hash table elements are not provided. Each slot in the created list (array) has a linked list attached to
+# it. In most cases, where the number of packages are less than 100, there are no collisions, and the linked list will
+# not be needed. But this implementation allows for growth over time, and eventual use of a larger data set if needed.
 class HashTable:
     def __init__(self, size=100):
         self.size = size
         self.array = [LinkedList() for i in range(self.size)]
-
-    # def returnHashData(self):
-    #     self.array[self].returnLinkedListData(self)
 
     # Calculate the index to use given the key value
     def calculateIndex(self, key):
@@ -115,10 +107,12 @@ class AdjacencyList:
     def addDistanceToAdacencyList(self, distance):
         self.list.insert(distance.location, distance.distance)
 
+    # prints the entire adjacency list
     def printAdjacencyList(self):
         for i in range(len(self.list)):
             print(self.list[i])
 
+    # returns a distance from the adjacency list
     def returnDistance(self, dest_index):
         return self.list[dest_index]
 
@@ -131,11 +125,9 @@ class DistanceMatrix:
         self.size = size
         self.array = [AdjacencyList(self.size) for i in range(self.size)]
 
-    # Adds an individual value to a matrix. In this case it also adds the converse since all distances are
-    # bi-directional
+    # Adds an individual value to a matrix.
     def addToMatrix(self, source_index, distance_obj):
         self.array[source_index].addDistanceToAdacencyList(distance_obj)
-        # set the converse
 
     # Returns the distance between two points. The inputs are both integers, that represent an address.
     def lookupDistance(self, source_index, dest_index):

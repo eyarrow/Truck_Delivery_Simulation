@@ -17,7 +17,7 @@ import DataStructures
 # 4. num_of_addresses: How many addresses are included in the distance index
 # 5. max_num_package_per_truck : This is default of 16, but this could be altered if in the future truck capacity
 # changes.
-# Other data members which are created as class members:
+# Other data members which are created as class members include:
 # 1. packages_truck1(2) : These are packages that are loaded into the truck specified. They do not have any limitations
 # and it's assumed they can be delivered at any time of day.
 # 2. self.packages_with_no_restrictions: All packages start here. When the class is created, all packages are loaded
@@ -49,8 +49,6 @@ class Simulation:
     # greedy algorithm to compute. Returns a list of packages in the best order using a "nearest neighbor" approach.
     # O(n^2)
     def discoverShortestPathList(self, starting_location, package_list):
-        # Get the ideal ordering for delivering the given packages. Produces the list of location codes
-        # in order.
         nearest_neighbor_list = []
         while package_list:
             nearest_neighbor = self.calculateClosestVertex(starting_location, package_list)
@@ -75,14 +73,17 @@ class Simulation:
                     closest_vertex = potential_adjacent[i]
         return closest_vertex
 
-    # Move a package from one list to another list
+    # Move a package from one list to another list. Package id is used rather than the actual package object, mostly
+    # so that it is easy for an employee to potentially adjust where packages go by their number, rather than
+    # having to know which package object a package number correlates with. (more extensible if the program functionality
+    # is extended down the line)
     def movePackageFromOneListToAnother(self, source_list, dest_list, package_id):
         package = self.new_packages.returnPackageByID(package_id)
         source_list.remove(package)
         dest_list.append(package)
 
     # if a package has been loaded on a truck, its status is updated. Runs this on all trucks in a ready status,
-    # so not necessary to run more than once
+    # so it only needs to be run after packages have been newly loaded.
     def updateStatusToLoadedOnTruck(self):
         for package in self.truck1.packages:
             package.updateDeliveryStatus('Loaded on truck 1 for delivery')
@@ -96,7 +97,9 @@ class Simulation:
 
 
     # Manages the loading of trucks and their delivery. End_time is the time after which the simulation will
-    # end. If no time is entered end of day is assumed (19:00
+    # end. If no time is entered end of day is assumed (19:00). In this case, packages are loaded in an order
+    # that allows the application to meet the requirements as specified. It would be easy to create additional
+    # functionality that would allow more flexibility. This implementaiton is offered as a proof of concept.
     def loadAndDeliver(self, end_time='19:00'):
         # Load packages that must be on specific trucks
         # 3, 18,  36, 38 only on truck 2
@@ -117,7 +120,8 @@ class Simulation:
 
         # 29, 30, 31, 34, 37, 40 by 10:30 am, split evenly between two trucks. (25 arrives late)Run through
         # optimization first, so that the order is as beneficial as possible.
-        # 6 is a unique case, because it needs to delivered by 10:30 but won't be available until 9:05
+        # 6 is a unique case, because it needs to delivered by 10:30 but won't be available until 9:05, so it's
+        # not included heree
         list_adjacent = [1, 29, 30, 31, 34, 37, 40]
         adjacent_packages = []
         while list_adjacent:
@@ -161,7 +165,12 @@ class Simulation:
             to_deliver.append(self.packages_with_no_restrictions[i])
         self.packages_with_no_restrictions = self.packages_with_no_restrictions[total_num_packages_to_pull:]
 
+        # Take of list of packages and send them through the optimization algorithm. This serves the purpose of grouping
+        # packages more closely to one another - hopefully avoiding the trucks having to cross paths more often than
+        # necessary.
         optimized_list = self.discoverShortestPathList(0, to_deliver)
+
+        # Split the optimized list into two lists, of the correct size for each truck
         list_truck1 = optimized_list[:total_num_packages_remaining_truck1]
         list_truck2 = optimized_list[total_num_packages_remaining_truck1:]
 
@@ -174,24 +183,28 @@ class Simulation:
         while list_truck2:
             self.movePackageFromOneListToAnother(list_truck2, self.packages_truck2, list_truck2[0].id)
 
+        # copy lists over to the truck's list
         self.truck1.packages = self.packages_truck1
         self.truck2.packages = self.packages_truck2
 
+        # Now that everything is loaded, update the statuses of the loaded trucks.
         self.updateStatusToLoadedOnTruck()
 
         # Truck two will report to depot to pick up package 9 (appended last because of a delayed
-        # address 10:05). Add 6, 25, 28, 32 available at 9:05
+        # address 10:05). Add 6, 25, 28, 32 available at 9:05. Truck 2 will run the simulation until 9:05
+        # or until the given end_time, whichever is earlier.
         self.runIndividualTruckSimulation(self.truck1, self.packages_with_deadline_truck1, end_time)
         if self.determineIfTimeIsAfter('09:05', end_time):
             self.runIndividualTruckSimulation(self.truck2, self.packages_with_deadline_truck2, '09:05')
         else:
             self.runIndividualTruckSimulation(self.truck2, self.packages_with_deadline_truck2, end_time)
 
-        # Will not proceed if the stop time falls before 9:05
+        # This stops the simulation from running and subsequently loading truck 2 again if the given end time
+        # falls before 9:05
         if self.determineIfTimeIsAfter(end_time, '09:05'):
             return
 
-        # Add packages to truck 2
+        # Add the late packages to truck 2
         self.movePackageFromOneListToAnother(self.packages_not_available, self.packages_with_deadline_truck2, 6)
         self.movePackageFromOneListToAnother(self.packages_not_available, self.packages_with_deadline_truck2, 25)
         self.movePackageFromOneListToAnother(self.packages_not_available, self.truck2.packages, 28)
@@ -199,37 +212,40 @@ class Simulation:
         self.movePackageFromOneListToAnother(self.packages_not_available, self.truck2.packages_to_hold, 9)
         self.truck2.packages_to_hold[0].updateDeliveryStatus('Loaded on truck 2 for delivery')
 
-
         # if there is any space remaining, load truck 2 until it's full.
         truck_space = self.max_num_package_per_truck - (len(self.packages_with_deadline_truck2) +
                                                         len(self.truck2.packages) + len(self.truck2.packages_to_hold))
         to_load = self.packages_with_no_restrictions[:truck_space]
+
+        # Optimize the route
         optimize = self.discoverShortestPathList(0, to_load)
         for package in optimize:
             self.truck2.packages.append(package)
             self.packages_with_no_restrictions.remove(package)
 
+        # Update load status
         self.updateStatusToLoadedOnTruck()
 
+        # Deliver until the given end time
         self.runIndividualTruckSimulation(self.truck2, self.packages_with_deadline_truck2, end_time)
 
-        print(f"Total travel miles truck 1: {self.truck1.miles}")
-        print(f"Total travel miles truck 2: {self.truck2.miles}")
-
-
     # Run a delivery simulation. Truck is the truck object doing the delivery. Special_handling is a list of
-    # packages that must be run first (so used outside of optimization. Time is the spot after which the simulation
+    # packages that must be run first . Time is the spot after which the simulation
     # should stop. So if the time from 8:00 to 8:15 were to be reviewed, this would be looking for times after 8:00
     def runIndividualTruckSimulation(self, truck, special_handling, time):
         # deliver time sensitive packages first
-        # Hand deliver the earliest delivery, so that it makes it on time. (needs to be reusable for subs delivery
+        # Hand deliver the earliest delivery, so that it makes it on time.
         current_location = 0  # At depot
         delivered = []  # tracks delivered packages so they can be removed from the appropriate list.
+        # There is a package that needs to be updated so these variables will manage that
         update_address = True
         update_time = '10:20'
+        # Delivers all special handling (ie early) packages until there are either no packages on this list remaining,
+        # or, the time given has elapsed. The application checks the time at each delivery point, but will not stop while
+        # on route
         while special_handling:
             next_destination = self.calculateClosestVertex(current_location, special_handling)
-            truck_time = self.deliverPackage(truck, next_destination, current_location)
+            self.deliverPackage(truck, next_destination, current_location)
             current_location = next_destination.location_code
             special_handling.remove(next_destination)
             if truck.determineIfTimeIsAfter(time):
@@ -256,6 +272,7 @@ class Simulation:
                 address_to_update.updateAddress('410 S State St', 'Salt Lake City', '84111', 20)
                 update_address = False
 
+        # Finally deliver packages that needed to be held for later delivery
         for item in truck.packages_to_hold:
             truck_time = self.deliverPackage(truck, item, current_location)
             current_location = item.location_code
@@ -270,9 +287,6 @@ class Simulation:
         # If we reach the end before time, return to the depot
         self.returnToDepotAddMiles(truck, current_location)
 
-
-
-
     # Deliver package. Update truck time and distance traveled. Update package status, and return current truck time
     def deliverPackage(self, truck, package, current_location):
         distance_traveled = self.new_packages.address_matrix.lookupDistance(current_location, package.location_code)
@@ -282,12 +296,13 @@ class Simulation:
 
         return truck_time
 
-    # adds distance to the total miles traveled for both trucks
+    # adds distance to the total miles traveled for both trucks. Is incremented everytime a delivery is made, or when
+    # a truck returns to the depot
     def updateTotalMiles(self, distance):
         self.total_distance_traveled = self.total_distance_traveled + distance
 
-    # Calculates the number of miles needed to get from the current location back to the depot. Increments the mileage of
-    # the truck and it's clock. Adds mileage to the total distance
+    # Calculates the number of miles needed to get from the current location back to the depot. Increments the mileage
+    # of the truck and it's clock. Adds mileage to the total distance traveled during the simulation
     def returnToDepotAddMiles(self, truck, current_location):
         distance_traveled = self.new_packages.address_matrix.lookupDistance(current_location, 0)
         truck_time = truck.deliverPackage(distance_traveled)
