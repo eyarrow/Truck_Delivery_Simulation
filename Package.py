@@ -2,7 +2,19 @@
 import DataStructures
 import csv
 
-
+# Package is a class designed to handle the management of an individual package object. It includes several lookup
+# functions that allow lookup by a parameter, and update functions to update information that may be need to be updated
+# during the business day.
+# Parameters:
+# 1. id - integer id. Is expected to be unique
+# 2. address
+# 3. deadline - time by which package must be delivered
+# 4. city - delivery city
+# 5. zip - zipcode
+# 6. weight - weight of package
+# 7. status - current status of the package. By default all packages will start at the hub unless another status is
+# indicated
+# 8. location code - this is a code that maps the
 class Package:
     def __init__(self, id, address, deadline, city, zip, weight, status='at the hub', location_code=0):
         self.id = id
@@ -23,28 +35,30 @@ class Package:
         print(
             f"{self.id} | {self.address} | {self.city} | {self.zip} | {self.weight} | {self.deadline} | {self.status}")
 
+    # return the package address
     def returnAddress(self):
         return self.address
 
+    # returns the package's location code
     def returnLocationCode(self):
         return self.location_code
 
-    def updateAddress(self, new_address, new_city, new_zip):
+    # Updates the packages destination address
+    def updateAddress(self, new_address, new_city, new_zip, new_location_code):
         self.address = new_address
         self.city = new_city
         self.zip = new_zip
+        self.location_code = new_location_code
 
 
 
-# Class to manage data related to a distance between points
+# Class to manage data related to a distance between points. All distance objects consist of a location code (integer)
+# and a distance. In this case, the location code represents the location code of the destination.
 class Distance:
     def __init__(self, locationCode, distance):
         self.location = locationCode
         self.distance = distance
 
-    def printDistance(self):
-        print(f"Location: {self.location}")
-        print(f"Distance: {self.distance}")
 
 
 # Class to manage the group of packages to be delivered. Parameters: filename_packages = file name that contains the
@@ -52,7 +66,7 @@ class Distance:
 # A list of all the addresses that will be delivered to in that day. Used to create a mapping between the addresses
 # number (order on the list) and the full physical address. Upon creation this class loads the packages, and addresses.
 # It creates a mapping between the addresses and the packages, storing the address index to the package record. A
-# lookup matrix is created so that distances between any two points can be easily determined.
+# lookup matrix is created so that distances between any two points can be easily determined in constant time O(1)
 class PackagesToBeDelivered:
     def __init__(self, filename_packages, filename_distances, filename_addresslist, num_addresses):
         self.packageHash = DataStructures.HashTable()
@@ -79,8 +93,12 @@ class PackagesToBeDelivered:
                     temp = temp.next
                     temp.data.printPackageInfo()
 
+    # Returns the location index (dictionary). Used for generating location codes.
+    def returnLocationIndex(self):
+        return self.location_index
+
     # Populate all the data members of the hash table with a location code. This is reliant on a key dictionary to be
-    # present
+    # present, which is created during the instantiation of the object
     def populateLocationCodes(self, key_dictionary):
         for i in range(len(self.packageHash.array)):
             if self.packageHash.array[i].returnLinkedListData() is None:
@@ -101,7 +119,7 @@ class PackagesToBeDelivered:
                 package_list.append(self.packageHash.array[i].returnLinkedListData().id)
         return package_list
 
-    # Returns a list of all the packages in the table
+    # Returns a list of all the packages in the hash table
     def returnAllPackages(self):
         package_list = []
         for i in range(len(self.packageHash.array)):
@@ -159,3 +177,5 @@ class PackagesToBeDelivered:
     def updateStatusByPackageID(self, package_id, status_string):
         key = self.packageHash.calculateIndex(package_id)
         self.packageHash.array[key].head.data.updateDeliveryStatus(status_string)
+
+

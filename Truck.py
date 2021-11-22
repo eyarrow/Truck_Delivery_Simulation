@@ -1,42 +1,18 @@
 # Module to manage trucks individually and in aggregate.
 import DataStructures
 
-
-# Class to manage instructions around deliveries that require special timing. "time" is the time on the clock by or
-# before the package must be delivered. Application assumes that military time is used, and leading zeroes are included.
-# (ex: 09:00 is valid whereas 9:00 is not) "before_after" should be either 0 or 1. 0 means that the package should be
-# delivered BEFORE the given time, whereas, 1 means that the package should be delivered after that time.
-# "package_number" is the number of the package to be delivered.
-class TimedDelivery:
-    def __init__(self, time, before_after, package_number):
-        self.TimedDelivery = (time, before_after, package_number)
-
-
-
-    def returnPackageID(self):
-        return self.TimedDelivery[2]
-
-
-
-
 # Class to manage each individual truck throughout the delivery process. "packages" represent all packages that are
-# loaded on the truck that DO NOT have time constraints. "packages_timed_delivery" is a linked list of packages that
-# do have time constraints. These are added as "TimedDelivery" objects which help determine delivery logic. The list
-# is always maintained in sorted order of when the package should be delivered.
+# loaded on the truck that DO NOT have time constraints. packages_to_hold are packages that need to be held for delivery
+# The simulation algorithm will leave those deliveries for end of day.
 class Truck:
     def __init__(self, truck_number=-1, miles=0, location='Depot'):
-        self.truck_number = truck_number
-        self.miles = miles
-        self.location = location
+        self.truck_number = truck_number  # a truck number
+        self.miles = miles  # aggregate of miles driven. Starts at zero
         self.packages = []  # List of packages with no special instructions
-        self.packages_timed_delivery = []  # Packages with instructions around delivery times
-        self.num_of_timed_packages = 0
-        self.num_of_packages = 0
-        self.delivered_packages = []
         self.packages_to_hold = []
         self.truck_time = "08:00:00"  # "local time" on the truck
 
-    # Given a time as a parameter, determines if the time entered as a parameter is after the objects given time.
+    # Given a time as a parameter, determines if the time entered as a parameter is after the trucks clock time.
     # if so returns true, else returns false. Assumes time given is military time, with leading zeroes included
     def determineIfTimeIsAfter(self, delivery_time):
         hour, minute = map(int, delivery_time.split(':'))
@@ -55,16 +31,16 @@ class Truck:
                 else:
                     return True
 
-    # check to see whether or not package is eligible for delivery at a given point in time. Returns true if
-    # the package is deliverable, false if it is too early for delivery
-    def checkDeliveryElligibility(self, delivery_time, before_after_flag):
-        if before_after_flag == 0:  # If it is supposed to be delivered before the given time, the answer is always yes
-            return True
-        else:  # Must be after a certain time, so check the condition
-            if self.determineIfTimeIsAfter(delivery_time) is True:
-                return True
-            else:
-                return False
+    # # check to see whether or not package is eligible for delivery at a given point in time. Returns true if
+    # # the package is deliverable, false if it is too early for delivery
+    # def checkDeliveryElligibility(self, delivery_time, before_after_flag):
+    #     if before_after_flag == 0:  # If it is supposed to be delivered before the given time, the answer is always yes
+    #         return True
+    #     else:  # Must be after a certain time, so check the condition
+    #         if self.determineIfTimeIsAfter(delivery_time) is True:
+    #             return True
+    #         else:
+    #             return False
 
     # Returns the list of packages to be delivered
     def returnPackages(self):

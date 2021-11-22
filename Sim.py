@@ -3,7 +3,30 @@
 import Package
 import Truck
 import DataStructures
-
+# Primary class that "runs" the truck delivery simulation. Instantiating and instance of the simulation requires the
+# following parameters:
+# 1. filename_of_packages: this is a csv file that includes all of the data for the packages to be delivered.
+# 2. filename_of_distances: this is a csv file that lists the distances from every location to every other location.
+# The file does not include addresses, but the subsequent filename_address_index is used to create a correlation between
+# an address and a location code that the program generates. The application creates "location codes" to be used by the
+# program. Each code represents the line number on which is exists in this CSV file. For example the hub is on the first
+# line, so it is assigned location code 0
+# 3. filename_address_index: This is a list of strings representing an address, as a csv file. The ordering of the
+# addresses should match the ordering in the filename_of_distances, so that the numbering of location codes is mapped
+# correctly.
+# 4. num_of_addresses: How many addresses are included in the distance index
+# 5. max_num_package_per_truck : This is default of 16, but this could be altered if in the future truck capacity
+# changes.
+# Other data members which are created as class members:
+# 1. packages_truck1(2) : These are packages that are loaded into the truck specified. They do not have any limitations
+# and it's assumed they can be delivered at any time of day.
+# 2. self.packages_with_no_restrictions: All packages start here. When the class is created, all packages are loaded
+# onto this list. They are moved into other lists as appropriate.
+# 3. packages_with_deadline_truck1(2): These packages need to be delivered by a certain time. They are prioritized
+# and will be delivered first.
+# 4. packages_not_available: Packages are moved to this list if they are not available at the depot, or if they are not
+# ready to be loaded on to a truck.
+# 5. total_distance_traveled: This is an aggregate of distances traveled by all trucks.
 class Simulation:
     def __init__(self, filename_of_packages, filename_of_distances, filename_address_index,
                  num_of_addresses, max_num_package_per_truck=16):
@@ -18,9 +41,7 @@ class Simulation:
         self.packages_not_available = []  # packages that are not available at the depot
         self.packages_with_no_restrictions = self.new_packages.returnAllPackages()  # packages that have no delivery
                                                     # restrictions. to start, this is loaded with all packages
-        self.packages_that_are_delivered = []  # packages that have been delivered
         self.total_distance_traveled = 0
-        self.timed_requests = []  # Packages that must be delivered before or after a given time.
         self.max_num_package_per_truck = max_num_package_per_truck
 
 
@@ -232,7 +253,7 @@ class Simulation:
                 return
             if truck.determineIfTimeIsAfter(update_time) and update_address == True:
                 address_to_update = self.new_packages.packageHash.findDataInHashTable(9)
-                address_to_update.updateAddress('410 S State St', 'Salt Lake City', '84111')
+                address_to_update.updateAddress('410 S State St', 'Salt Lake City', '84111', 20)
                 update_address = False
 
         for item in truck.packages_to_hold:
@@ -243,7 +264,7 @@ class Simulation:
                 return
             if truck.determineIfTimeIsAfter(update_time) and update_address == True:
                 address_to_update = self.new_packages.packageHash.findDataInHashTable(9)
-                address_to_update.updateAddress('410 S State St', 'Salt Lake City', '84111')
+                address_to_update.updateAddress('410 S State St', 'Salt Lake City', '84111', 20)
                 update_address = False
 
         # If we reach the end before time, return to the depot
